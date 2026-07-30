@@ -20,8 +20,13 @@ type DueMessage = {
 const BATCH_SIZE = 20;
 
 export async function GET(request: NextRequest) {
+  // Terima secret lewat header (Vercel Cron) ATAU query param (layanan cron gratis
+  // yang tidak mendukung custom header, mis. cron-job.org).
   const auth = request.headers.get("authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  const queryToken = request.nextUrl.searchParams.get("token");
+  const isAuthorized =
+    auth === `Bearer ${process.env.CRON_SECRET}` || queryToken === process.env.CRON_SECRET;
+  if (!isAuthorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
