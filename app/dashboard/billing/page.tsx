@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatRupiah } from "@/lib/phone";
 import { upgradePlan } from "./actions";
@@ -135,7 +136,11 @@ export default async function BillingPage({
       </div>
       <p className="mt-3 text-xs text-gray-400">
         Pembayaran diproses oleh Mayar. Anda akan diarahkan ke halaman
-        pembayaran resmi Mayar untuk menyelesaikan transaksi.
+        pembayaran resmi Mayar untuk menyelesaikan transaksi. Lihat{" "}
+        <Link href="/kebijakan-refund" className="underline hover:text-gray-600">
+          Kebijakan Refund
+        </Link>{" "}
+        kami.
       </p>
 
       <div className="mt-8 rounded-xl bg-white p-6 shadow-sm">

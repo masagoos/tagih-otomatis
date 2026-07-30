@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 type Mode = "magic" | "password";
@@ -135,6 +136,17 @@ export default function LoginPage() {
           </form>
         )}
       </div>
+      <p className="mt-4 text-center text-xs text-gray-400">
+        Dengan masuk, Anda menyetujui{" "}
+        <Link href="/syarat-layanan" className="underline hover:text-gray-600">
+          Syarat Layanan
+        </Link>{" "}
+        dan{" "}
+        <Link href="/kebijakan-privasi" className="underline hover:text-gray-600">
+          Kebijakan Privasi
+        </Link>{" "}
+        kami.
+      </p>
     </main>
   );
 }
