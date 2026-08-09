@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Tagih Otomatis",
   description: "Pengingat tagihan via WhatsApp untuk UMKM — jalan sendiri.",
+  other: {
+    "facebook-domain-verification": "1zazhwgavvl68kjgc3653t1czpiycw",
+  },
 };
 
 export default function RootLayout({
