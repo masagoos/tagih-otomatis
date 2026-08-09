@@ -1,5 +1,62 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+// Satu akun Mayar (masagooscheck@gmail.com) dipakai 2 produk, tapi Mayar cuma
+// kasih SATU slot URL webhook per akun — jadi URL-nya tetap di sini (tagihotomatis.id),
+// dan payment link yang tidak cocok dengan payment 'pending' Tagih Otomatis dicoba
+// lagi ke Supabase Auto-Posting Sosmed sebelum dianggap tidak dikenal.
+function createAutoPostingSosmedClient() {
+  const url = process.env.AUTOPOSTING_SUPABASE_URL;
+  const key = process.env.AUTOPOSTING_SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createSupabaseClient(url, key, { auth: { persistSession: false } });
+}
+
+async function processAutoPostingSosmedPayment(productId: string, paidAmount: number, externalId: string) {
+  const apClient = createAutoPostingSosmedClient();
+  if (!apClient) return;
+
+  const { data: payment } = await apClient
+    .from("payments")
+    .select("id, client_id, plan, amount, status")
+    .eq("mayar_link_id", productId)
+    .eq("status", "pending")
+    .maybeSingle();
+  if (!payment || Number(payment.amount) !== paidAmount) return;
+
+  const { data: client } = await apClient
+    .from("clients")
+    .select("paid_until")
+    .eq("id", payment.client_id)
+    .single();
+
+  const currentExpiry = client?.paid_until ? new Date(client.paid_until) : null;
+  const base = currentExpiry && currentExpiry > new Date() ? currentExpiry : new Date();
+  const newExpiry = new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+  await apClient
+    .from("payments")
+    .update({
+      status: "paid",
+      paid_at: new Date().toISOString(),
+      mayar_transaction_id: externalId,
+      period_start: new Date().toISOString(),
+      period_end: newExpiry.toISOString(),
+    })
+    .eq("id", payment.id);
+
+  await apClient
+    .from("clients")
+    .update({
+      plan: payment.plan,
+      subscription_status: "active",
+      paid_until: newExpiry.toISOString(),
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", payment.client_id);
+}
 
 // Mayar TIDAK mendokumentasikan mekanisme tanda tangan webhook. Mitigasi:
 // 1) token rahasia di query string (URL webhook tidak boleh disebar)
@@ -37,8 +94,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, note: "duplicate, skipped" });
   }
 
+  // "payment.received" = pembayaran benar-benar lunas. data.status TIDAK bisa dipakai
+  // sebagai penanda lunas — Mayar mengirim data.status: "SUCCESS" (string) bahkan pada
+  // event "payment.reminder" (tagihan yang BELUM dibayar), jadi field itu hanya menandakan
+  // webhook-nya terkirim sukses, bukan status pembayarannya.
   const productId = String(data.productId ?? "");
-  const paidStatus = data.status === true;
+  const paidStatus = payload.event === "payment.received";
   const paidAmount = Number(data.amount ?? 0);
 
   if (productId && paidStatus) {
@@ -52,7 +113,7 @@ export async function POST(request: NextRequest) {
     if (payment && Number(payment.amount) === paidAmount) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("plan, plan_expires_at")
+        .select("plan, plan_expires_at, referred_by")
         .eq("id", payment.user_id)
         .single();
 
@@ -83,6 +144,35 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq("id", payment.user_id);
+
+      // Kalau user ini direferensikan affiliate, catat komisinya. unique(payment_id)
+      // mencegah dobel-catat kalau webhook ini diproses ulang (retry Mayar).
+      if (profile?.referred_by) {
+        const { data: affiliate } = await supabase
+          .from("affiliates")
+          .select("id, commission_rate")
+          .eq("id", profile.referred_by)
+          .eq("status", "active")
+          .maybeSingle();
+
+        if (affiliate) {
+          const commissionAmount = Number(affiliate.commission_rate) * paidAmount;
+          const { error: commissionErr } = await supabase.from("affiliate_commissions").insert({
+            affiliate_id: affiliate.id,
+            user_id: payment.user_id,
+            payment_id: payment.id,
+            amount: commissionAmount,
+            rate: affiliate.commission_rate,
+          });
+          if (commissionErr && !commissionErr.message.includes("duplicate")) {
+            console.error("Gagal mencatat komisi affiliate:", commissionErr.message);
+          }
+        }
+      }
+    } else {
+      // Bukan payment link Tagih Otomatis — coba Auto-Posting Sosmed
+      // (produk lain yang berbagi akun Mayar & webhook URL yang sama).
+      await processAutoPostingSosmedPayment(productId, paidAmount, externalId);
     }
   }
 
