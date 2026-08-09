@@ -76,6 +76,16 @@ export default async function DashboardLayout({
               >
                 Langganan{needsAttention && " ⚠️"}
               </Link>
+              {user.email === process.env.FOUNDER_EMAIL && (
+                <>
+                  <Link href="/dashboard/admin/customers" className="rounded-lg px-3 py-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900">
+                    Kelola Pelanggan
+                  </Link>
+                  <Link href="/dashboard/admin/affiliates" className="rounded-lg px-3 py-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900">
+                    Kelola Affiliate
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
           <form action={signOut}>

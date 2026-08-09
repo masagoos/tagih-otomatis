@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/phone";
 
 const DEFAULT_TEMPLATES = [
@@ -43,11 +45,28 @@ export async function completeProfile(formData: FormData) {
     redirect("/dashboard?error=data-tidak-lengkap");
   }
 
+  // Tautkan ke affiliate yang mereferensikan user ini, kalau ada cookie
+  // referral yang masih berlaku (lihat proxy.ts). Pakai admin client karena
+  // tabel affiliates tidak punya RLS policy publik.
+  let referredBy: string | null = null;
+  const refCode = (await cookies()).get("tagih_ref")?.value;
+  if (refCode) {
+    const admin = createAdminClient();
+    const { data: affiliate } = await admin
+      .from("affiliates")
+      .select("id")
+      .eq("code", refCode)
+      .eq("status", "active")
+      .maybeSingle();
+    if (affiliate) referredBy = affiliate.id;
+  }
+
   const { error: profileError } = await supabase.from("profiles").insert({
     id: user.id,
     business_name: businessName,
     owner_name: ownerName,
     phone,
+    referred_by: referredBy,
   });
   if (profileError) redirect(`/dashboard?error=${encodeURIComponent(profileError.message)}`);
 

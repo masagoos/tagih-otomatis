@@ -455,6 +455,7 @@ export default async function LandingPage() {
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-xs text-gray-400 sm:flex-row">
           <span>© 2026 Tagih Otomatis</span>
           <div className="flex gap-4">
+            <Link href="/affiliate" className="hover:text-gray-600">Program Affiliate</Link>
             <Link href="/syarat-layanan" className="hover:text-gray-600">Syarat Layanan</Link>
             <Link href="/kebijakan-privasi" className="hover:text-gray-600">Kebijakan Privasi</Link>
             <Link href="/kebijakan-refund" className="hover:text-gray-600">Kebijakan Refund</Link>
