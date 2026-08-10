@@ -27,7 +27,7 @@ async function processAutoPostingSosmedPayment(productId: string, paidAmount: nu
 
   const { data: client } = await apClient
     .from("clients")
-    .select("paid_until")
+    .select("paid_until, referred_by")
     .eq("id", payment.client_id)
     .single();
 
@@ -45,6 +45,31 @@ async function processAutoPostingSosmedPayment(productId: string, paidAmount: nu
       period_end: newExpiry.toISOString(),
     })
     .eq("id", payment.id);
+
+  // Klien ini direferensikan affiliate — catat komisinya. unique(payment_id)
+  // mencegah dobel-catat kalau webhook ini diproses ulang (retry Mayar).
+  if (client?.referred_by) {
+    const { data: affiliate } = await apClient
+      .from("affiliates")
+      .select("id, commission_rate")
+      .eq("id", client.referred_by)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (affiliate) {
+      const commissionAmount = Number(affiliate.commission_rate) * paidAmount;
+      const { error: commissionErr } = await apClient.from("affiliate_commissions").insert({
+        affiliate_id: affiliate.id,
+        client_id: payment.client_id,
+        payment_id: payment.id,
+        amount: commissionAmount,
+        rate: affiliate.commission_rate,
+      });
+      if (commissionErr && !commissionErr.message.includes("duplicate")) {
+        console.error("Gagal mencatat komisi affiliate Auto-Posting Sosmed:", commissionErr.message);
+      }
+    }
+  }
 
   await apClient
     .from("clients")
