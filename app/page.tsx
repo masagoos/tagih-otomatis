@@ -1,6 +1,10 @@
+import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatRupiah } from "@/lib/phone";
+import LandingNav from "./_components/landing-nav";
+import LandingFaq from "./_components/landing-faq";
+import styles from "./page.module.css";
 
 export const metadata = {
   title: "Tagih Otomatis — Pengingat Tagihan WhatsApp untuk UMKM",
@@ -13,7 +17,101 @@ const TIER_META: Record<string, { name: string; price: number; highlight?: boole
   pro: { name: "Pro", price: 150000, highlight: true },
 };
 
-const TECH_PARTNERS = ["WhatsApp via Fonnte", "Mayar", "Supabase", "Vercel"];
+function CheckIcon() {
+  return (
+    <svg className={styles.icon} viewBox="0 0 24 24">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeLinecap="round">
+      <line x1="6" y1="6" x2="18" y2="18" />
+      <line x1="18" y1="6" x2="6" y2="18" />
+    </svg>
+  );
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg className={styles.icon} viewBox="0 0 24 24">
+      <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.35 0-2.62-.32-3.75-.9L3 21l1.9-5.75A8.5 8.5 0 1 1 21 11.5z" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg className={styles.icon} viewBox="0 0 24 24">
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  );
+}
+
+function SheetIcon() {
+  return (
+    <svg className={styles.icon} viewBox="0 0 24 24">
+      <path d="M4 4h16v16H4z" />
+      <path d="M8 9h8M8 13h5M8 17h8" />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg className={styles.icon} viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 3" />
+    </svg>
+  );
+}
+
+function ChatIcon() {
+  return (
+    <svg className={styles.icon} viewBox="0 0 24 24">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+function StackIcon() {
+  return (
+    <svg className={styles.icon} viewBox="0 0 24 24">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M9 13h6M9 17h6" />
+    </svg>
+  );
+}
+
+function CashIcon() {
+  return (
+    <svg className={styles.icon} viewBox="0 0 24 24">
+      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </svg>
+  );
+}
+
+function BellIcon() {
+  return (
+    <svg className={styles.icon} viewBox="0 0 24 24">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
+function ChartIcon() {
+  return (
+    <svg className={styles.icon} viewBox="0 0 24 24">
+      <path d="M3 3v18h18" />
+      <path d="M7 15l4-4 3 3 5-6" />
+    </svg>
+  );
+}
 
 export default async function LandingPage() {
   const supabase = await createClient();
@@ -21,445 +119,674 @@ export default async function LandingPage() {
     .from("plan_limits")
     .select("plan, monthly_messages, max_devices");
   const limitsByPlan = new Map((limits ?? []).map((l) => [l.plan, l]));
+  const starterLimit = limitsByPlan.get("starter");
+  const proLimit = limitsByPlan.get("pro");
+
+  const faqItems = [
+    {
+      q: "Apakah data tagihan dan pelanggan saya aman?",
+      a: "Ya. Seluruh data tagihan dan kontak pelanggan disimpan dengan enkripsi dan hanya dapat diakses dari akun Anda sendiri. Selengkapnya di Kebijakan Privasi kami.",
+    },
+    {
+      q: "Apakah nomor WhatsApp saya bisa kena blokir?",
+      a: "Kami mengirim dengan jeda otomatis antar pesan dan hanya ke nomor pelanggan yang memang punya tagihan dengan usaha Anda — bukan kirim pesan massal ke daftar nomor asing.",
+    },
+    {
+      q: "Perlu WhatsApp Business?",
+      a: "Tidak wajib. Anda bisa hubungkan nomor WhatsApp biasa yang sudah Anda pakai untuk jualan.",
+    },
+    {
+      q: "Bagaimana cara kerja reminder otomatis?",
+      a: "Setelah Anda mencatat tagihan dan tanggal jatuh tempo, sistem menjadwalkan dan mengirim pesan WhatsApp secara otomatis sesuai pengaturan Anda — dan berhenti begitu tagihan ditandai lunas.",
+    },
+    {
+      q: "Berapa lama proses setup?",
+      a: "Sekitar 10 menit. Anda cukup membuat akun, menghubungkan WhatsApp, dan mengimpor atau mencatat tagihan pertama.",
+    },
+    {
+      q: "Bagaimana kalau saya mau berhenti?",
+      a: "Tidak ada kontrak mengikat. Bayar per bulan, dan bisa berhenti kapan saja tanpa penalti dari pengaturan akun.",
+    },
+    {
+      q: "Apa perbedaan paket Starter dan Pro?",
+      a: `Starter mencakup ${starterLimit?.monthly_messages ?? "sejumlah"} pesan pengingat/bulan dengan ${starterLimit?.max_devices ?? 1} nomor WhatsApp. Pro mencakup ${proLimit?.monthly_messages ?? "lebih banyak"} pesan pengingat/bulan dengan ${proLimit?.max_devices ?? 1} nomor WhatsApp — cocok untuk volume tagihan yang lebih besar. Tagihan dan pelanggan tidak dibatasi di kedua paket.`,
+    },
+  ];
 
   return (
-    <main className="bg-white text-gray-900">
-      {/* Nav */}
-      <header className="sticky top-0 z-20 border-b border-gray-100 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-          <span className="flex items-center gap-2 text-lg font-bold">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600 text-sm text-white">
-              ✓
+    <main className={styles.page}>
+      {/* ============ NAV ============ */}
+      <header className={styles.nav}>
+        <div className={styles.navInner}>
+          <a href="#" className={styles.logo}>
+            <span className={styles.logoMark}>
+              <Image src="/logo-masagoos.png" alt="Masagoos Studio" width={64} height={64} />
             </span>
-            Tagih Otomatis
-          </span>
-          <nav className="hidden items-center gap-8 text-sm font-medium text-gray-600 sm:flex">
-            <a href="#cara-kerja" className="hover:text-gray-900">Cara Kerja</a>
-            <a href="#fitur" className="hover:text-gray-900">Fitur</a>
-            <a href="#harga" className="hover:text-gray-900">Harga</a>
-            <a href="#faq" className="hover:text-gray-900">FAQ</a>
+            TagihOtomatis
+          </a>
+          <nav className={styles.navMenu}>
+            <a href="#produk">Produk</a>
+            <a href="#cara-kerja">Cara Kerja</a>
+            <a href="#harga">Harga</a>
+            <a href="#faq">FAQ</a>
           </nav>
-          <Link
-            href="/login"
-            className="rounded-full bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-violet-200 hover:bg-violet-700"
-          >
-            Coba Gratis
-          </Link>
+          <div className={styles.navActions}>
+            <Link href="/login" className={styles.navLogin}>
+              Masuk
+            </Link>
+            <Link href="/login" className={`${styles.btn} ${styles.btnPrimary} ${styles.btnSm}`}>
+              Coba Gratis
+            </Link>
+          </div>
+          <LandingNav />
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-40 -top-40 h-[32rem] w-[32rem] rounded-full opacity-60 blur-3xl"
-          style={{ background: "radial-gradient(circle, #ede9fe 0%, transparent 70%)" }}
-        />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-5 py-16 sm:py-24 lg:grid-cols-2">
-          {/* Kiri: copy */}
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-violet-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-violet-700">
-              🤖 Otomatisasi Tagihan untuk UMKM
-            </span>
-            <h1 className="mt-5 text-4xl font-extrabold leading-[1.1] tracking-tight text-gray-900 sm:text-5xl">
-              Catat. Jadwalkan.
+      {/* ============ HERO ============ */}
+      <section className={styles.hero}>
+        <div className={`${styles.container} ${styles.heroGrid}`}>
+          <div className={styles.heroContent}>
+            <span className={styles.heroBadge}>✦ Otomatisasi Penagihan untuk UMKM</span>
+            <h1>
+              Tagihan terkirim.
               <br />
-              <span className="text-violet-600">Biar WhatsApp yang Nagih.</span>
+              Pembayaran <span className={styles.accent}>lebih cepat.</span>
             </h1>
-            <p className="mt-5 max-w-md text-base leading-relaxed text-gray-500 sm:text-lg">
-              Tagih Otomatis mengirim pengingat pembayaran ke WhatsApp
-              pelanggan Anda secara otomatis — dari sebelum jatuh tempo
-              sampai lunas. Anda tinggal pantau laporannya.
+            <p className={styles.heroSub}>
+              Catat tagihan, jadwalkan pengingat WhatsApp, dan pantau pembayaran pelanggan tanpa
+              harus menagih satu per satu.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <Link
-                href="/login"
-                className="rounded-full bg-violet-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-700"
-              >
-                Coba Gratis 14 Hari →
+            <div className={styles.heroCta}>
+              <Link href="/login" className={`${styles.btn} ${styles.btnPrimary}`}>
+                Mulai Gratis 14 Hari →
               </Link>
-              <a
-                href="#cara-kerja"
-                className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-gray-900"
-              >
-                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200">▶</span>
-                Lihat cara kerjanya
+              <a href="#cara-kerja" className={`${styles.btn} ${styles.btnGhost}`}>
+                Lihat Cara Kerjanya ↓
               </a>
             </div>
-            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-gray-400">
-              <span>✓ Tanpa kartu kredit</span>
-              <span>✓ Setup 10 menit</span>
-              <span>✓ Batalkan kapan saja</span>
+            <div className={styles.heroTrust}>
+              <span>
+                <CheckIcon />
+                Tanpa kartu kredit
+              </span>
+              <span>
+                <CheckIcon />
+                Setup sekitar 10 menit
+              </span>
+              <span>
+                <CheckIcon />
+                Batalkan kapan saja
+              </span>
             </div>
           </div>
 
-          {/* Kanan: mockup WhatsApp + kartu statistik melayang */}
-          <div className="relative mx-auto w-full max-w-xs lg:max-w-sm">
-            <div
-              aria-hidden
-              className="absolute -inset-6 -z-10 rounded-[3rem] opacity-70 blur-2xl"
-              style={{ background: "radial-gradient(circle, #ddd6fe 0%, transparent 70%)" }}
-            />
-            {/* "Layar HP" berisi mockup chat WA */}
-            <div className="overflow-hidden rounded-[2rem] border border-gray-200 bg-white shadow-2xl shadow-violet-100">
-              <div className="flex items-center gap-3 bg-[#075E54] px-4 py-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-sm text-white">
-                  🏪
+          <div className={styles.heroVisual}>
+            <div className={styles.dash}>
+              <div className={styles.dashHead}>
+                <div className={styles.dashTitle}>
+                  <span className={styles.dashDot} />
+                  Dashboard Tagihan
                 </div>
+                <div className={styles.dashNav}>
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              </div>
+              <div className={styles.dashKpis}>
+                <div className={styles.kpi}>
+                  <div className={styles.kpiLabel}>Total Tagihan</div>
+                  <div className={styles.kpiValue}>Rp128.450.000</div>
+                </div>
+                <div className={`${styles.kpi} ${styles.kpiAccent}`}>
+                  <div className={styles.kpiLabel}>Tertagih</div>
+                  <div className={styles.kpiValue}>Rp96.200.000</div>
+                </div>
+                <div className={styles.kpi}>
+                  <div className={styles.kpiLabel}>Belum Dibayar</div>
+                  <div className={styles.kpiValue}>Rp32.250.000</div>
+                </div>
+              </div>
+              <div className={styles.dashChart}>
+                <div className={styles.dashChartLabel}>Cash collection — 7 hari terakhir</div>
+                <svg viewBox="0 0 300 48" preserveAspectRatio="none">
+                  <polyline
+                    points="0,38 40,32 80,34 120,20 160,24 200,12 240,16 300,6"
+                    fill="none"
+                    stroke="#37BFA7"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx="300" cy="6" r="3.5" fill="#37BFA7" />
+                </svg>
+              </div>
+              <div className={styles.dashListLabel}>Tagihan Terbaru</div>
+              <div className={styles.invoiceRow}>
                 <div>
-                  <p className="text-sm font-semibold text-white">Toko Bu Sari</p>
-                  <p className="text-[11px] text-white/70">online</p>
+                  <div className={styles.invName}>Toko Berkah Jaya</div>
+                  <div className={styles.invAmt}>Rp750.000</div>
                 </div>
+                <span className={`${styles.status} ${styles.statusLunas}`}>LUNAS</span>
               </div>
-              <div className="space-y-2 bg-[#e5ddd5] px-3 py-4">
-                <div className="ml-auto max-w-[85%] rounded-lg rounded-tr-none bg-[#dcf8c6] px-3 py-2 text-[12px] leading-snug text-gray-800 shadow-sm">
-                  Halo Kak Budi, tagihan INV-0012 sebesar Rp350.000 jatuh
-                  tempo 3 hari lagi. Mohon disiapkan ya 🙏
-                  <div className="mt-1 flex items-center justify-end gap-1 text-[9px] text-gray-500">
-                    09.00 <span className="text-sky-500">✓✓</span>
-                  </div>
+              <div className={styles.invoiceRow}>
+                <div>
+                  <div className={styles.invName}>Warung Melati</div>
+                  <div className={styles.invAmt}>Rp350.000</div>
                 </div>
-                <div className="ml-auto max-w-[85%] rounded-lg rounded-tr-none bg-[#dcf8c6] px-3 py-2 text-[12px] leading-snug text-gray-800 shadow-sm">
-                  Halo Kak Budi, tagihan INV-0012 sudah jatuh tempo hari ini.
-                  Konfirmasi kalau sudah dibayar ya 🙏
-                  <div className="mt-1 flex items-center justify-end gap-1 text-[9px] text-gray-500">
-                    09.00 <span className="text-sky-500">✓✓</span>
-                  </div>
+                <span className={`${styles.status} ${styles.statusTerkirim}`}>TERKIRIM</span>
+              </div>
+              <div className={styles.invoiceRow}>
+                <div>
+                  <div className={styles.invName}>Bu Rina Catering</div>
+                  <div className={styles.invAmt}>Rp1.200.000</div>
                 </div>
-                <div className="mx-auto w-fit rounded-full bg-white/70 px-3 py-1 text-[10px] text-gray-500">
-                  Sent via Tagih Otomatis
-                </div>
+                <span className={`${styles.status} ${styles.statusMenunggu}`}>MENUNGGU</span>
               </div>
             </div>
 
-            {/* Kartu melayang: kemampuan produk, BUKAN klaim jumlah pengguna */}
-            <div className="absolute -left-10 top-8 hidden w-40 rounded-2xl border border-gray-100 bg-white p-3 shadow-xl sm:block">
-              <p className="text-lg font-extrabold text-violet-600">4x</p>
-              <p className="text-[11px] leading-snug text-gray-500">Pengingat terjadwal: H-3 s/d H+7</p>
-            </div>
-            <div className="absolute -right-6 top-1/3 hidden w-36 rounded-2xl border border-gray-100 bg-white p-3 shadow-xl sm:block">
-              <p className="text-lg font-extrabold text-violet-600">24 Jam</p>
-              <p className="text-[11px] leading-snug text-gray-500">Berjalan otomatis, tanpa perlu Anda pantau</p>
-            </div>
-            <div className="absolute -bottom-6 left-6 hidden w-40 rounded-2xl border border-gray-100 bg-white p-3 shadow-xl sm:block">
-              <p className="text-lg font-extrabold text-violet-600">10 Menit</p>
-              <p className="text-[11px] leading-snug text-gray-500">Setup awal sampai siap kirim</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Strip teknologi terintegrasi */}
-        <div className="mx-auto max-w-5xl px-5 pb-16">
-          <div className="rounded-2xl border border-gray-100 bg-gray-50/60 px-6 py-5">
-            <p className="text-center text-xs font-medium uppercase tracking-wide text-gray-400">
-              Terintegrasi dengan teknologi tepercaya
-            </p>
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
-              {TECH_PARTNERS.map((name) => (
-                <span key={name} className="text-sm font-semibold text-gray-400">
-                  {name}
-                </span>
-              ))}
+            <div className={styles.notifCard}>
+              <div className={styles.notifHead}>
+                <WhatsAppIcon />
+                Reminder Berhasil Dikirim
+              </div>
+              <div className={styles.notifBody}>
+                Halo Kak Budi, tagihan <b>INV-0012</b> sebesar <b>Rp350.000</b> akan jatuh tempo 3
+                hari lagi.
+              </div>
+              <div className={styles.notifFoot}>
+                <span>09:00</span>
+                <span className={styles.notifCheck}>Terkirim ✓✓</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Masalah */}
-      <section className="border-t border-gray-100 bg-gray-50/60 px-5 py-20">
-        <div className="mx-auto max-w-5xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-xs font-semibold uppercase tracking-wide text-violet-600">Masalahnya</span>
-            <h2 className="mt-2 text-2xl font-extrabold text-gray-900 sm:text-3xl">
-              UMKM kehilangan uang bukan karena kurang laris
-              <br className="hidden sm:block" /> — tapi karena lupa nagih.
+      {/* ============ TRUST STRIP ============ */}
+      <section className={styles.trustStrip}>
+        <div className={`${styles.container} ${styles.trustStripInner}`}>
+          <p className={styles.trustLead}>
+            Dirancang untuk membantu UMKM mengelola tagihan dengan lebih rapi.
+          </p>
+          <div className={styles.trustItems}>
+            <span>
+              <WhatsAppIcon />
+              WhatsApp Automation
+            </span>
+            <span>
+              <LockIcon />
+              Data Terenkripsi
+            </span>
+            <span>
+              <SheetIcon />
+              Import Excel/CSV
+            </span>
+            <span>
+              <ClockIcon />
+              Real-time Monitoring
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ PROBLEM ============ */}
+      <section className={styles.section} id="produk">
+        <div className={styles.container}>
+          <div className={`${styles.sectionHead} ${styles.center}`} style={{ maxWidth: 640 }}>
+            <h2>
+              Masalahnya bukan pelanggan tidak mau bayar.
+              <br />
+              Anda sering lupa menagih.
             </h2>
           </div>
-          <div className="mt-12 grid gap-6 sm:grid-cols-3">
-            {[
-              {
-                emoji: "😓",
-                title: "Sungkan Ingetin Berkali-kali",
-                desc: "Menagih pelanggan yang sama berulang kali bikin tidak enak hati — padahal itu uang Anda sendiri.",
-              },
-              {
-                emoji: "📝",
-                title: "Catatan Tagihan Berantakan",
-                desc: "Tersebar di buku, chat WA pribadi, atau ingatan — susah tahu siapa yang belum bayar dan sejak kapan.",
-              },
-              {
-                emoji: "💸",
-                title: "Uang Macet, Cash Flow Seret",
-                desc: "Tagihan yang telat ditagih artinya uang yang telat masuk — usaha jadi susah berkembang.",
-              },
-            ].map((item) => (
-              <div key={item.title} className="rounded-2xl bg-white p-6 shadow-sm shadow-gray-100">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-xl">
-                  {item.emoji}
-                </span>
-                <h3 className="mt-4 font-bold text-gray-900">{item.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-gray-500">{item.desc}</p>
+          <div className={styles.problemGrid}>
+            <div className={styles.problemCard}>
+              <span className={styles.problemNum}>01</span>
+              <div className={styles.problemIcon}>
+                <ChatIcon />
               </div>
-            ))}
+              <h3>Sungkan Mengingatkan</h3>
+              <p>Menagih pelanggan berkali-kali terasa tidak nyaman.</p>
+            </div>
+            <div className={styles.problemCard}>
+              <span className={styles.problemNum}>02</span>
+              <div className={styles.problemIcon}>
+                <StackIcon />
+              </div>
+              <h3>Catatan Berantakan</h3>
+              <p>Tagihan tersebar di buku, spreadsheet, chat, dan ingatan.</p>
+            </div>
+            <div className={styles.problemCard}>
+              <span className={styles.problemNum}>03</span>
+              <div className={styles.problemIcon}>
+                <CashIcon />
+              </div>
+              <h3>Cash Flow Tersendat</h3>
+              <p>Semakin lama tagihan belum dibayar, semakin lama uang masuk ke bisnis.</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Cara Kerja */}
-      <section id="cara-kerja" className="px-5 py-20">
-        <div className="mx-auto max-w-4xl">
-          <div className="text-center">
-            <span className="text-xs font-semibold uppercase tracking-wide text-violet-600">Simpel</span>
-            <h2 className="mt-2 text-2xl font-extrabold text-gray-900 sm:text-3xl">Cara Kerjanya</h2>
+      {/* ============ BEFORE / AFTER ============ */}
+      <section className={`${styles.section} ${styles.sectionTight}`}>
+        <div className={styles.container}>
+          <div className={`${styles.sectionHead} ${styles.center}`} style={{ maxWidth: 560 }}>
+            <h2>Dari nagih manual menjadi otomatis.</h2>
           </div>
-          <div className="relative mt-14 grid gap-10 sm:grid-cols-3">
-            <div
-              aria-hidden
-              className="absolute left-0 right-0 top-6 hidden h-px bg-gradient-to-r from-transparent via-violet-200 to-transparent sm:block"
-            />
-            {[
-              {
-                step: "1",
-                title: "Catat Tagihan",
-                desc: "Input nama pelanggan, nominal, dan tanggal jatuh tempo — 30 detik selesai.",
-              },
-              {
-                step: "2",
-                title: "Sistem Jadwalkan Otomatis",
-                desc: "Pengingat WA terjadwal otomatis: sebelum jatuh tempo, hari-H, sampai kalau telat — bahasa sopan, bukan spam.",
-              },
-              {
-                step: "3",
-                title: "Anda Tinggal Lihat Laporan",
-                desc: "Pantau siapa sudah bayar, siapa belum, dan berapa total tertagih — semua di satu dashboard.",
-              },
-            ].map((item) => (
-              <div key={item.step} className="relative text-center">
-                <div className="relative z-10 mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-violet-600 text-base font-bold text-white shadow-lg shadow-violet-200">
-                  {item.step}
-                </div>
-                <h3 className="mt-4 font-bold text-gray-900">{item.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-gray-500">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Fitur */}
-      <section id="fitur" className="border-t border-gray-100 bg-gray-50/60 px-5 py-20">
-        <div className="mx-auto max-w-5xl">
-          <div className="text-center">
-            <span className="text-xs font-semibold uppercase tracking-wide text-violet-600">Fitur</span>
-            <h2 className="mt-2 text-2xl font-extrabold text-gray-900 sm:text-3xl">Semua yang Anda Butuh</h2>
-          </div>
-          <div className="mt-12 grid gap-x-6 gap-y-10 text-center sm:grid-cols-3 lg:grid-cols-6">
-            {[
-              { emoji: "📱", title: "Pengingat Otomatis", desc: "H-3 s/d H+7." },
-              { emoji: "📊", title: "Laporan Real-time", desc: "Tahu berapa tertagih." },
-              { emoji: "📥", title: "Import Excel/CSV", desc: "Upload sekali langkah." },
-              { emoji: "✍️", title: "Template Bisa Diedit", desc: "Sesuai gaya usaha." },
-              { emoji: "🔒", title: "Data Terenkripsi", desc: "Aman & privat." },
-              { emoji: "⏰", title: "Jadwal Fleksibel", desc: "Atur jam kirim." },
-            ].map((item) => (
-              <div key={item.title}>
-                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 text-2xl">
-                  {item.emoji}
-                </span>
-                <h3 className="mt-3 text-sm font-bold text-gray-900">{item.title}</h3>
-                <p className="mt-1 text-xs text-gray-500">{item.desc}</p>
-              </div>
-            ))}
+          <div className={styles.baGrid}>
+            <div className={`${styles.baCard} ${styles.baBefore}`}>
+              <span className={styles.baLabel}>Sebelum</span>
+              <span className={styles.baSub}>Manual</span>
+              <ul>
+                {[
+                  "Cek spreadsheet",
+                  "Cari chat pelanggan",
+                  "Ingat tanggal jatuh tempo",
+                  "Kirim pesan satu per satu",
+                  "Cek siapa yang sudah bayar",
+                  "Takut lupa follow-up",
+                ].map((t) => (
+                  <li key={t}>
+                    <span className={styles.baMark}>
+                      <XIcon />
+                    </span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className={`${styles.baCard} ${styles.baAfter}`}>
+              <span className={styles.baLabel}>Sesudah</span>
+              <span className={styles.baSub}>TagihOtomatis</span>
+              <ul>
+                {[
+                  "Input sekali",
+                  "Jadwal otomatis",
+                  "Reminder WhatsApp",
+                  "Status pembayaran",
+                  "Dashboard real-time",
+                  "Reminder berhenti saat lunas",
+                ].map((t) => (
+                  <li key={t}>
+                    <span className={styles.baMark}>
+                      <CheckIcon />
+                    </span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Product showcase — mockup dashboard sungguhan */}
-      <section className="px-5 py-20">
-        <div className="mx-auto grid max-w-5xl items-center gap-10 lg:grid-cols-2">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-wide text-violet-600">Di Dalam Aplikasi</span>
-            <h2 className="mt-2 text-2xl font-extrabold text-gray-900 sm:text-3xl">
-              Satu dashboard, semua tagihan terpantau.
+      {/* ============ WORKFLOW ============ */}
+      <section className={styles.section} id="cara-kerja">
+        <div className={styles.container}>
+          <div className={`${styles.sectionHead} ${styles.center}`} style={{ maxWidth: 560 }}>
+            <h2>
+              Anda catat sekali.
+              <br />
+              TagihOtomatis yang bekerja.
             </h2>
-            <ul className="mt-6 space-y-3 text-sm text-gray-600">
-              {[
-                "Lihat total piutang & tertagih bulan ini sekali buka.",
-                "Riwayat tiap pengingat: terkirim, sampai, atau gagal.",
-                "Tandai lunas satu klik — pengingat berikutnya otomatis berhenti.",
-              ].map((t) => (
-                <li key={t} className="flex items-start gap-2">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[11px] text-violet-700">✓</span>
-                  {t}
-                </li>
-              ))}
-            </ul>
           </div>
+          <div className={styles.workflow}>
+            {[
+              { n: "01", t: "Catat", d: "Masukkan pelanggan, nominal, dan tanggal jatuh tempo." },
+              { n: "02", t: "Jadwalkan", d: "Sistem menentukan kapan reminder dikirim." },
+              { n: "03", t: "Ingatkan", d: "WhatsApp mengirim pesan secara otomatis." },
+              { n: "04", t: "Pantau", d: "Anda melihat status pembayaran dari dashboard." },
+            ].map((step) => (
+              <div key={step.n} className={styles.wfStep}>
+                <div className={styles.wfBadge}>{step.n}</div>
+                <h3>{step.t}</h3>
+                <p>{step.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-          {/* Mockup kartu dashboard */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl shadow-violet-100">
-            <div className="flex items-center gap-1.5 border-b border-gray-100 pb-3">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-300" />
-              <span className="h-2.5 w-2.5 rounded-full bg-yellow-300" />
-              <span className="h-2.5 w-2.5 rounded-full bg-green-300" />
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-violet-50 p-3">
-                <p className="text-[11px] text-gray-500">Tertagih Bulan Ini</p>
-                <p className="mt-1 text-lg font-extrabold text-violet-700">Rp4.250.000</p>
-              </div>
-              <div className="rounded-xl bg-gray-50 p-3">
-                <p className="text-[11px] text-gray-500">Belum Dibayar</p>
-                <p className="mt-1 text-lg font-extrabold text-gray-900">6</p>
-              </div>
-            </div>
-            <div className="mt-3 space-y-2">
-              {[
-                { name: "Toko Berkah Jaya", amount: "Rp750.000", status: "Lunas", cls: "bg-green-100 text-green-700" },
-                { name: "Warung Melati", amount: "Rp350.000", status: "Terkirim", cls: "bg-blue-100 text-blue-700" },
-                { name: "Bu Rina Catering", amount: "Rp1.200.000", status: "Menunggu", cls: "bg-yellow-100 text-yellow-700" },
-              ].map((row) => (
-                <div key={row.name} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-xs">
-                  <span className="font-medium text-gray-700">{row.name}</span>
-                  <span className="text-gray-500">{row.amount}</span>
-                  <span className={`rounded-full px-2 py-0.5 font-medium ${row.cls}`}>{row.status}</span>
+      {/* ============ PRODUCT SHOWCASE ============ */}
+      <section className={`${styles.section} ${styles.sectionSoft}`}>
+        <div className={styles.container}>
+          <div className={`${styles.sectionHead} ${styles.center}`} style={{ maxWidth: 560 }}>
+            <h2>
+              Satu dashboard.
+              <br />
+              Semua tagihan terpantau.
+            </h2>
+          </div>
+          <div className={styles.showcasePanel}>
+            <div className={styles.showcaseInner}>
+              <div className={styles.showcaseTop}>
+                <div className={styles.showcaseCallouts}>
+                  <div>
+                    <div className={`${styles.calloutValue} ${styles.calloutAccent}`}>
+                      Rp4.250.000
+                    </div>
+                    <div className={styles.calloutLabel}>tertagih bulan ini</div>
+                  </div>
+                  <div>
+                    <div className={styles.calloutValue}>6</div>
+                    <div className={styles.calloutLabel}>tagihan belum dibayar</div>
+                  </div>
+                  <div>
+                    <div className={styles.calloutValue}>09.00</div>
+                    <div className={styles.calloutLabel}>reminder berikutnya</div>
+                  </div>
+                  <div>
+                    <div className={`${styles.calloutValue} ${styles.calloutAccent}`}>12</div>
+                    <div className={styles.calloutLabel}>reminder berhasil dikirim</div>
+                  </div>
                 </div>
-              ))}
+              </div>
+              <div className={styles.showcaseBody}>
+                <div>
+                  <div className={styles.showcaseTableHead}>
+                    <span>Pelanggan</span>
+                    <span>Nominal</span>
+                    <span>Status</span>
+                  </div>
+                  {[
+                    { name: "Toko Berkah Jaya", amt: "Rp750.000", status: "LUNAS", cls: styles.statusLunas },
+                    { name: "Warung Melati", amt: "Rp350.000", status: "TERKIRIM", cls: styles.statusTerkirim },
+                    { name: "Bu Rina Catering", amt: "Rp1.200.000", status: "MENUNGGU", cls: styles.statusMenunggu },
+                    { name: "Kedai Sinar Pagi", amt: "Rp480.000", status: "TERLAMBAT", cls: styles.statusTerlambat },
+                  ].map((row) => (
+                    <div key={row.name} className={styles.showcaseRow}>
+                      <span className={styles.invName}>{row.name}</span>
+                      <span className={styles.invAmt}>{row.amt}</span>
+                      <span className={`${styles.status} ${row.cls}`}>{row.status}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.showcaseSide}>
+                  <div className={styles.sideTitle}>Ringkasan Bulan Ini</div>
+                  {[
+                    ["Total tagihan", "Rp128.450.000"],
+                    ["Tertagih", "Rp96.200.000"],
+                    ["Belum dibayar", "Rp32.250.000"],
+                    ["Reminder terkirim", "12x"],
+                  ].map(([label, value]) => (
+                    <div key={label} className={styles.sideRow}>
+                      <span>{label}</span>
+                      <span>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Harga */}
-      <section id="harga" className="border-t border-gray-100 bg-gray-50/60 px-5 py-20">
-        <div className="mx-auto max-w-4xl">
-          <div className="text-center">
-            <span className="text-xs font-semibold uppercase tracking-wide text-violet-600">Harga</span>
-            <h2 className="mt-2 text-2xl font-extrabold text-gray-900 sm:text-3xl">Harga Sederhana</h2>
-            <p className="mt-2 text-sm text-gray-500">
-              Coba gratis 14 hari dulu. Bayar per bulan, berhenti kapan saja.
-            </p>
+      {/* ============ BENTO FEATURES ============ */}
+      <section className={styles.section}>
+        <div className={styles.container}>
+          <div className={styles.sectionHead}>
+            <span className={styles.eyebrow}>Fitur</span>
+            <h2 style={{ marginTop: 12 }}>Semua yang dibutuhkan untuk menagih lebih rapi.</h2>
           </div>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2">
+          <div className={styles.bento}>
+            <div className={`${styles.bentoCard} ${styles.bLarge}`}>
+              <div className={styles.bentoIcon}>
+                <BellIcon />
+              </div>
+              <h3>Pengingat Otomatis</h3>
+              <p>
+                Reminder terkirim ke WhatsApp pelanggan sebelum, pada saat, dan setelah jatuh
+                tempo — tanpa Anda kirim manual.
+              </p>
+              <div className={styles.miniMsg}>
+                <div className={styles.miniMsgHead}>
+                  <WhatsAppIcon />
+                  TAGIH OTOMATIS
+                </div>
+                <p>
+                  &quot;Tagihan INV-0012 sebesar Rp350.000 akan jatuh tempo 3 hari lagi.&quot; —
+                  terkirim otomatis pukul 09:00
+                </p>
+              </div>
+            </div>
+            <div className={`${styles.bentoCard} ${styles.bMedium}`}>
+              <div className={styles.bentoIcon}>
+                <ChartIcon />
+              </div>
+              <h3>Laporan Real-time</h3>
+              <p>Pantau tagihan lunas, terkirim, dan menunggu langsung dari satu dashboard.</p>
+              <div className={styles.bentoDetail}>
+                <b>Update otomatis</b> setiap ada pembayaran masuk
+              </div>
+            </div>
+            <div className={`${styles.bentoCard} ${styles.bMedium}`}>
+              <div className={styles.bentoIcon}>
+                <SheetIcon />
+              </div>
+              <h3>Import Excel/CSV</h3>
+              <p>Punya data tagihan lama di spreadsheet? Tinggal upload, sistem yang rapikan.</p>
+              <div className={styles.bentoDetail}>
+                Mendukung format <b>.xlsx</b> dan <b>.csv</b>
+              </div>
+            </div>
+            <div className={`${styles.bentoCard} ${styles.bSmall}`}>
+              <div className={styles.bentoIcon}>
+                <StackIcon />
+              </div>
+              <h3>Template Pesan</h3>
+              <p>Sesuaikan gaya bahasa reminder agar sesuai karakter bisnis Anda.</p>
+            </div>
+            <div className={`${styles.bentoCard} ${styles.bSmall}`}>
+              <div className={styles.bentoIcon}>
+                <ClockIcon />
+              </div>
+              <h3>Jadwal Fleksibel</h3>
+              <p>Atur kapan reminder dikirim — sebelum, saat, atau setelah jatuh tempo.</p>
+            </div>
+            <div className={`${styles.bentoCard} ${styles.bSmall}`}>
+              <div className={styles.bentoIcon}>
+                <LockIcon />
+              </div>
+              <h3>Data Terenkripsi</h3>
+              <p>Data tagihan dan pelanggan Anda disimpan secara aman dan terenkripsi.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ PRODUCT PROOF ============ */}
+      <section className={`${styles.section} ${styles.sectionTight} ${styles.sectionDeep}`}>
+        <div className={styles.container}>
+          <div className={`${styles.sectionHead} ${styles.center}`} style={{ maxWidth: 560 }}>
+            <span className={styles.eyebrow}>Kenapa percaya TagihOtomatis</span>
+            <h2 style={{ marginTop: 12 }}>Trust dibangun dari produk, bukan janji.</h2>
+          </div>
+          <div className={styles.proofGrid}>
+            {[
+              { icon: <LockIcon />, t: "Keamanan Data", d: "Data tagihan dan kontak pelanggan tersimpan terenkripsi di server yang aman." },
+              { icon: <BellIcon />, t: "Workflow Sederhana", d: "Catat, jadwalkan, ingatkan, pantau — empat langkah tanpa proses rumit." },
+              { icon: <ChartIcon />, t: "Dashboard Nyata", d: "Bukan mockup — dashboard yang Anda lihat adalah tampilan produk yang sebenarnya." },
+              { icon: <ClockIcon />, t: "Free Trial 14 Hari", d: "Coba seluruh fitur tanpa kartu kredit sebelum memutuskan berlangganan." },
+              { icon: <CashIcon />, t: "Harga Transparan", d: "Dua paket, harga jelas di muka. Tidak ada biaya tersembunyi." },
+              { icon: <WhatsAppIcon />, t: "WhatsApp Native", d: "Reminder dikirim ke WhatsApp yang sudah dipakai pelanggan Anda sehari-hari." },
+            ].map((item) => (
+              <div key={item.t} className={styles.proofCard}>
+                <div className={styles.iconWrap}>{item.icon}</div>
+                <h4>{item.t}</h4>
+                <p>{item.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============ NUMERIC PROOF ============ */}
+      <section className={styles.sectionTight}>
+        <div className={styles.container}>
+          <div className={styles.numericStrip}>
+            <div className={styles.numCell}>
+              <div className={styles.numValue}>14 Hari</div>
+              <div className={styles.numLabel}>Free Trial</div>
+            </div>
+            <div className={styles.numCell}>
+              <div className={styles.numValue}>10 Menit</div>
+              <div className={styles.numLabel}>Setup</div>
+            </div>
+            <div className={styles.numCell}>
+              <div className={styles.numValue}>{starterLimit?.monthly_messages ?? 200}+</div>
+              <div className={styles.numLabel}>Pesan/bulan</div>
+            </div>
+            <div className={styles.numCell}>
+              <div className={styles.numValue}>1 Dashboard</div>
+              <div className={styles.numLabel}>Semua tagihan</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ PRICING ============ */}
+      <section className={styles.section} id="harga">
+        <div className={styles.container}>
+          <div className={`${styles.sectionHead} ${styles.center}`} style={{ maxWidth: 520 }}>
+            <h2>Harga sederhana, tanpa kejutan.</h2>
+            <p>Pilih paket sesuai skala tagihan bisnis Anda.</p>
+          </div>
+          <div className={styles.pricingGrid}>
             {Object.entries(TIER_META).map(([key, tier]) => {
               const limit = limitsByPlan.get(key);
               return (
                 <div
                   key={key}
-                  className={`relative rounded-2xl p-7 ${
-                    tier.highlight
-                      ? "border-2 border-violet-600 bg-white shadow-xl shadow-violet-100"
-                      : "border border-gray-200 bg-white"
-                  }`}
+                  className={`${styles.priceCard} ${tier.highlight ? styles.priceCardFeatured : ""}`}
                 >
-                  {tier.highlight && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-violet-600 px-3 py-1 text-[11px] font-semibold text-white">
-                      Paling Populer
-                    </span>
-                  )}
-                  <h3 className="text-lg font-bold text-gray-900">{tier.name}</h3>
-                  <p className="mt-1 text-3xl font-extrabold text-gray-900">
-                    {formatRupiah(tier.price)}
-                    <span className="text-sm font-normal text-gray-400">/bulan</span>
-                  </p>
-                  <ul className="mt-5 space-y-2 text-sm text-gray-600">
-                    <li className="flex items-center gap-2">
-                      <span className="text-violet-600">✓</span>
+                  {tier.highlight && <span className={styles.priceBadge}>Paling Populer</span>}
+                  <div className={styles.pricePlan}>{tier.name}</div>
+                  <div className={styles.priceAmount}>
+                    <span className={styles.amt}>{formatRupiah(tier.price)}</span>
+                    <span className={styles.per}>/bulan</span>
+                  </div>
+                  <ul>
+                    <li>
+                      <CheckIcon />
                       {limit?.monthly_messages ?? "—"} pesan pengingat/bulan
                     </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-violet-600">✓</span>
+                    <li>
+                      <CheckIcon />
                       {limit?.max_devices ?? 1} nomor WhatsApp
                     </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-violet-600">✓</span>
+                    <li>
+                      <CheckIcon />
                       Tagihan &amp; pelanggan tanpa batas
                     </li>
                   </ul>
                   <Link
                     href="/login"
-                    className={`mt-6 block rounded-full py-3 text-center text-sm font-semibold ${
-                      tier.highlight
-                        ? "bg-violet-600 text-white shadow-lg shadow-violet-200 hover:bg-violet-700"
-                        : "bg-gray-900 text-white hover:bg-gray-800"
-                    }`}
+                    className={`${styles.btn} ${tier.highlight ? styles.btnPrimary : styles.btnSecondary}`}
                   >
-                    Mulai Coba Gratis
+                    Mulai Gratis
                   </Link>
                 </div>
               );
             })}
           </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section id="faq" className="px-5 py-20">
-        <div className="mx-auto max-w-2xl">
-          <div className="text-center">
-            <span className="text-xs font-semibold uppercase tracking-wide text-violet-600">FAQ</span>
-            <h2 className="mt-2 text-2xl font-extrabold text-gray-900 sm:text-3xl">Pertanyaan Umum</h2>
-          </div>
-          <div className="mt-10 divide-y divide-gray-100">
-            {[
-              {
-                q: "Apakah nomor WhatsApp saya bisa kena blokir?",
-                a: "Kami mengirim dengan jeda otomatis antar pesan dan hanya ke nomor pelanggan yang memang punya tagihan dengan usaha Anda — bukan kirim pesan massal ke daftar nomor asing.",
-              },
-              {
-                q: "Data pelanggan saya aman?",
-                a: "Ya. Data tersimpan terenkripsi dan hanya bisa diakses dari akun Anda sendiri. Selengkapnya di Kebijakan Privasi kami.",
-              },
-              {
-                q: "Perlu WhatsApp Business?",
-                a: "Tidak wajib. Anda bisa hubungkan nomor WhatsApp biasa yang sudah Anda pakai untuk jualan.",
-              },
-              {
-                q: "Bagaimana kalau saya mau berhenti?",
-                a: "Tidak ada kontrak mengikat. Bayar per bulan, dan bisa berhenti kapan saja tanpa penalti.",
-              },
-            ].map((item) => (
-              <div key={item.q} className="py-5">
-                <h3 className="font-semibold text-gray-900">{item.q}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-gray-500">{item.a}</p>
-              </div>
-            ))}
+          <div className={styles.pricingFoot}>
+            <span>
+              <CheckIcon />
+              14 hari gratis
+            </span>
+            <span>
+              <CheckIcon />
+              Tanpa kartu kredit
+            </span>
+            <span>
+              <CheckIcon />
+              Berhenti kapan saja
+            </span>
           </div>
         </div>
       </section>
 
-      {/* CTA akhir */}
-      <section className="px-5 pb-20">
-        <div className="mx-auto max-w-4xl overflow-hidden rounded-3xl bg-violet-600 px-8 py-14 text-center">
-          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 text-2xl">
-            🚀
-          </span>
-          <h2 className="mt-5 text-2xl font-extrabold text-white sm:text-3xl">
-            Berhenti nagih manual, mulai hari ini.
+      {/* ============ FAQ ============ */}
+      <section className={`${styles.section} ${styles.sectionSoft}`} id="faq">
+        <div className={styles.container}>
+          <div className={`${styles.sectionHead} ${styles.center}`} style={{ maxWidth: 520 }}>
+            <h2>Pertanyaan yang sering ditanyakan.</h2>
+          </div>
+          <LandingFaq items={faqItems} />
+        </div>
+      </section>
+
+      {/* ============ FINAL CTA ============ */}
+      <section className={styles.sectionNavy}>
+        <div className={`${styles.container} ${styles.finalCta}`}>
+          <h2>
+            Berhenti nagih manual.
+            <br />
+            Mulai otomatis hari ini.
           </h2>
-          <p className="mt-2 text-sm text-violet-100">
-            Jadi salah satu pengguna pertama kami — early-bird, langsung didampingi setup.
+          <p>
+            Gunakan 14 hari pertama untuk melihat bagaimana TagihOtomatis membantu bisnis Anda
+            mengelola tagihan dengan lebih rapi.
           </p>
-          <Link
-            href="/login"
-            className="mt-7 inline-block rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-violet-700 shadow-lg hover:bg-violet-50"
-          >
-            Coba Gratis 14 Hari →
-          </Link>
-          <p className="mt-4 text-xs text-violet-200">Tanpa kartu kredit · Setup 10 menit</p>
+          <div className={styles.finalCtaActions}>
+            <Link href="/login" className={`${styles.btn} ${styles.btnOnNavy}`}>
+              Coba Gratis 14 Hari →
+            </Link>
+          </div>
+          <div className={styles.finalTrust}>
+            Tanpa kartu kredit · Setup sekitar 10 menit · Batalkan kapan saja
+          </div>
+          <div className={styles.finalMini}>
+            <div>
+              <div className={styles.lbl}>Tertagih bulan ini</div>
+              <div className={styles.val}>Rp4.250.000</div>
+            </div>
+            <div>
+              <div className={styles.lbl}>Reminder terkirim</div>
+              <div className={styles.val}>12x</div>
+            </div>
+            <div>
+              <div className={styles.lbl}>Status</div>
+              <div className={styles.val} style={{ color: "#37BFA7" }}>
+                Real-time
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-100 px-5 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-xs text-gray-400 sm:flex-row">
-          <span>© 2026 Tagih Otomatis</span>
-          <div className="flex gap-4">
-            <Link href="/affiliate" className="hover:text-gray-600">Program Affiliate</Link>
-            <Link href="/syarat-layanan" className="hover:text-gray-600">Syarat Layanan</Link>
-            <Link href="/kebijakan-privasi" className="hover:text-gray-600">Kebijakan Privasi</Link>
-            <Link href="/kebijakan-refund" className="hover:text-gray-600">Kebijakan Refund</Link>
+      {/* ============ FOOTER ============ */}
+      <footer className={styles.footer}>
+        <div className={styles.container}>
+          <div className={styles.footerInner}>
+            <div className={styles.footerBrand}>
+              <a href="#" className={styles.logo}>
+                <span className={styles.logoMark}>
+                  <Image src="/logo-masagoos.png" alt="Masagoos Studio" width={64} height={64} />
+                </span>
+                TagihOtomatis
+              </a>
+              <p className={styles.footerTagline}>Penagihan lebih rapi. Pembayaran lebih cepat.</p>
+            </div>
+            <div className={styles.footerLinks}>
+              <div className={styles.footerCol}>
+                <a href="#produk">Produk</a>
+                <a href="#harga">Harga</a>
+                <a href="#faq">FAQ</a>
+              </div>
+              <div className={styles.footerCol}>
+                <Link href="/affiliate">Program Affiliate</Link>
+                <Link href="/syarat-layanan">Syarat Layanan</Link>
+              </div>
+              <div className={styles.footerCol}>
+                <Link href="/kebijakan-privasi">Kebijakan Privasi</Link>
+                <Link href="/kebijakan-refund">Kebijakan Refund</Link>
+              </div>
+            </div>
           </div>
+          <div className={styles.footerBottom}>© 2026 TagihOtomatis. Seluruh hak cipta dilindungi.</div>
         </div>
       </footer>
     </main>
