@@ -1,13 +1,15 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createContact } from "../invoices/actions";
+import { deleteContact } from "./actions";
 
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; success?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, success } = await searchParams;
 
   const supabase = await createClient();
   const {
@@ -17,7 +19,7 @@ export default async function ContactsPage({
 
   const { data: contacts } = await supabase
     .from("contacts")
-    .select("id, name, phone, created_at")
+    .select("id, name, phone, email, created_at")
     .eq("is_active", true)
     .order("name");
 
@@ -47,6 +49,15 @@ export default async function ContactsPage({
             className="mt-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
           />
         </label>
+        <label className="block">
+          <span className="text-xs font-medium text-gray-700">Email (opsional)</span>
+          <input
+            type="email"
+            name="email"
+            placeholder="nama@email.com"
+            className="mt-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+        </label>
         <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
           + Tambah
         </button>
@@ -54,6 +65,12 @@ export default async function ContactsPage({
 
       {error && (
         <div className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>
+      )}
+      {success === "diperbarui" && (
+        <div className="mt-3 rounded-lg bg-green-50 p-3 text-sm text-green-700">Pelanggan berhasil diperbarui.</div>
+      )}
+      {success === "dihapus" && (
+        <div className="mt-3 rounded-lg bg-green-50 p-3 text-sm text-green-700">Pelanggan berhasil dihapus.</div>
       )}
 
       <div className="mt-4 overflow-x-auto rounded-xl bg-white shadow-sm">
@@ -68,7 +85,9 @@ export default async function ContactsPage({
               <tr className="border-b bg-gray-50 text-left text-xs uppercase text-gray-500">
                 <th className="px-4 py-3">Nama</th>
                 <th className="px-4 py-3">No. WA</th>
+                <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Terdaftar</th>
+                <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
@@ -76,8 +95,25 @@ export default async function ContactsPage({
                 <tr key={c.id} className="border-b last:border-0 hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-gray-900">{c.name}</td>
                   <td className="px-4 py-3 text-gray-600">{c.phone}</td>
+                  <td className="px-4 py-3 text-gray-500">{c.email || "-"}</td>
                   <td className="px-4 py-3 text-gray-400">
                     {new Date(c.created_at).toLocaleDateString("id-ID")}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3 whitespace-nowrap">
+                      <Link
+                        href={`/dashboard/contacts/${c.id}/edit`}
+                        className="text-xs text-blue-600 underline hover:text-blue-800"
+                      >
+                        Ubah
+                      </Link>
+                      <form action={deleteContact}>
+                        <input type="hidden" name="id" value={c.id} />
+                        <button className="text-xs text-red-600 underline hover:text-red-800">
+                          Hapus
+                        </button>
+                      </form>
+                    </div>
                   </td>
                 </tr>
               ))}

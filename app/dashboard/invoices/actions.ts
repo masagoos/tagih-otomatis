@@ -51,22 +51,30 @@ async function findOrCreateContact(
   supabase: Supa,
   userId: string,
   name: string,
-  rawPhone: string
+  rawPhone: string,
+  email?: string
 ): Promise<{ id?: string; error?: string }> {
   const phone = normalizePhone(rawPhone);
   if (!phone) return { error: `Nomor HP tidak valid: ${rawPhone}` };
 
   const { data: existing } = await supabase
     .from("contacts")
-    .select("id")
+    .select("id, is_active")
     .eq("user_id", userId)
     .eq("phone", phone)
     .maybeSingle();
-  if (existing) return { id: existing.id };
+  if (existing) {
+    // Kontak ini sebelumnya di-nonaktifkan (Hapus di halaman Pelanggan) — daftar
+    // ulang pakai nomor yang sama berarti mengaktifkan lagi, bukan no-op senyap.
+    if (!existing.is_active) {
+      await supabase.from("contacts").update({ is_active: true }).eq("id", existing.id);
+    }
+    return { id: existing.id };
+  }
 
   const { data: created, error } = await supabase
     .from("contacts")
-    .insert({ user_id: userId, name, phone })
+    .insert({ user_id: userId, name, phone, email: email || null })
     .select("id")
     .single();
   if (error || !created) return { error: error?.message ?? "Gagal membuat kontak" };
@@ -229,10 +237,13 @@ export async function createContact(formData: FormData) {
   const { supabase, user } = await requireUser();
   const name = String(formData.get("name") ?? "").trim();
   const rawPhone = String(formData.get("phone") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim();
   if (!name || !rawPhone)
     redirect("/dashboard/contacts?error=Nama+dan+nomor+HP+wajib+diisi");
+  if (email && !email.includes("@"))
+    redirect("/dashboard/contacts?error=Format+email+tidak+valid");
 
-  const result = await findOrCreateContact(supabase, user.id, name, rawPhone);
+  const result = await findOrCreateContact(supabase, user.id, name, rawPhone, email);
   if (result.error)
     redirect(`/dashboard/contacts?error=${encodeURIComponent(result.error)}`);
 

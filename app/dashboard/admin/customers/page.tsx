@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -21,7 +22,13 @@ const WA_STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   disconnected: { label: "Terputus", cls: "bg-gray-100 text-gray-500" },
 };
 
-export default async function AdminCustomersPage() {
+export default async function AdminCustomersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; success?: string }>;
+}) {
+  const { error, success } = await searchParams;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -67,6 +74,16 @@ export default async function AdminCustomersPage() {
         Status langganan dan koneksi WhatsApp semua pelanggan.
       </p>
 
+      {error && (
+        <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+      )}
+      {success === "diperbarui" && (
+        <div className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">Data pelanggan berhasil diperbarui.</div>
+      )}
+      {success === "dihapus" && (
+        <div className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">Pelanggan berhasil dihapus.</div>
+      )}
+
       <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <p className="text-xs text-gray-500">Total Pelanggan</p>
@@ -103,6 +120,7 @@ export default async function AdminCustomersPage() {
                   <th className="py-2 pr-4">Berlaku / Berakhir</th>
                   <th className="py-2 pr-4">Nomor WA</th>
                   <th className="py-2 pr-4">Terdaftar</th>
+                  <th className="py-2 pr-4"></th>
                 </tr>
               </thead>
               <tbody>
@@ -156,6 +174,22 @@ export default async function AdminCustomersPage() {
                       </td>
                       <td className="py-2 pr-4 text-gray-500">
                         {new Date(c.created_at).toLocaleDateString("id-ID")}
+                      </td>
+                      <td className="py-2 pr-4">
+                        <div className="flex items-center gap-2 whitespace-nowrap">
+                          <Link
+                            href={`/dashboard/admin/customers/${c.id}/edit`}
+                            className="text-xs text-violet-600 underline hover:text-violet-800"
+                          >
+                            Ubah
+                          </Link>
+                          <Link
+                            href={`/dashboard/admin/customers/${c.id}/delete`}
+                            className="text-xs text-red-600 underline hover:text-red-800"
+                          >
+                            Hapus
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );

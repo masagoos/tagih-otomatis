@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatRupiah } from "@/lib/phone";
-import { createAffiliateFromLead, rejectLead, markCommissionPaid, toggleAffiliateStatus } from "./actions";
+import { createAffiliateFromLead, rejectLead, deleteLead, markCommissionPaid, toggleAffiliateStatus } from "./actions";
 
 const TIER_LABEL: Record<string, string> = {
   affiliate: "Affiliate (30%)",
@@ -81,6 +82,15 @@ export default async function AdminAffiliatesPage({
           <span className="font-mono">{process.env.NEXT_PUBLIC_APP_URL}/?ref={code}</span>
         </div>
       )}
+      {success === "affiliate-diperbarui" && (
+        <div className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">Data affiliate berhasil diperbarui.</div>
+      )}
+      {success === "affiliate-dihapus" && (
+        <div className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">Affiliate berhasil dihapus.</div>
+      )}
+      {success === "lead-dihapus" && (
+        <div className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">Pendaftar berhasil dihapus.</div>
+      )}
 
       <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
         <div className="rounded-xl bg-white p-5 shadow-sm">
@@ -133,6 +143,12 @@ export default async function AdminAffiliatesPage({
                       Tolak
                     </button>
                   </form>
+                  <form action={deleteLead}>
+                    <input type="hidden" name="lead_id" value={lead.id} />
+                    <button className="rounded-lg px-3 py-1.5 text-sm text-red-600 hover:bg-red-50">
+                      Hapus
+                    </button>
+                  </form>
                 </div>
               </div>
             ))}
@@ -177,13 +193,27 @@ export default async function AdminAffiliatesPage({
                       </span>
                     </td>
                     <td className="py-2 pr-4">
-                      <form action={toggleAffiliateStatus}>
-                        <input type="hidden" name="affiliate_id" value={a.id} />
-                        <input type="hidden" name="next_status" value={a.status === "active" ? "inactive" : "active"} />
-                        <button className="text-xs text-gray-500 underline hover:text-gray-900">
-                          {a.status === "active" ? "Nonaktifkan" : "Aktifkan"}
-                        </button>
-                      </form>
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <form action={toggleAffiliateStatus}>
+                          <input type="hidden" name="affiliate_id" value={a.id} />
+                          <input type="hidden" name="next_status" value={a.status === "active" ? "inactive" : "active"} />
+                          <button className="text-xs text-gray-500 underline hover:text-gray-900">
+                            {a.status === "active" ? "Nonaktifkan" : "Aktifkan"}
+                          </button>
+                        </form>
+                        <Link
+                          href={`/dashboard/admin/affiliates/${a.id}/edit`}
+                          className="text-xs text-violet-600 underline hover:text-violet-800"
+                        >
+                          Ubah
+                        </Link>
+                        <Link
+                          href={`/dashboard/admin/affiliates/${a.id}/delete`}
+                          className="text-xs text-red-600 underline hover:text-red-800"
+                        >
+                          Hapus
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}

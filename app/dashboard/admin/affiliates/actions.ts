@@ -103,3 +103,70 @@ export async function toggleAffiliateStatus(formData: FormData) {
   revalidatePath("/dashboard/admin/affiliates");
   redirect("/dashboard/admin/affiliates");
 }
+
+export async function updateAffiliate(formData: FormData) {
+  await requireFounder();
+  const admin = createAdminClient();
+
+  const id = String(formData.get("id") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+  const tier = String(formData.get("tier") ?? "affiliate");
+  const status = String(formData.get("status") ?? "active");
+  const rate = TIER_RATE[tier] ?? TIER_RATE.affiliate;
+
+  if (!name || !email) {
+    redirect(`/dashboard/admin/affiliates/${id}/edit?error=data-tidak-lengkap`);
+  }
+
+  const { error } = await admin
+    .from("affiliates")
+    .update({ name, email, phone: phone || null, tier, commission_rate: rate, status })
+    .eq("id", id);
+
+  if (error) {
+    redirect(`/dashboard/admin/affiliates/${id}/edit?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/dashboard/admin/affiliates");
+  redirect("/dashboard/admin/affiliates?success=affiliate-diperbarui");
+}
+
+export async function deleteAffiliate(formData: FormData) {
+  await requireFounder();
+  const admin = createAdminClient();
+  const id = String(formData.get("id") ?? "");
+
+  // affiliate_commissions.affiliate_id dan profiles.referred_by TIDAK cascade —
+  // affiliate dengan riwayat komisi/referral sengaja tidak boleh dihapus begitu
+  // saja (akan merusak riwayat keuangan). Nonaktifkan saja lewat tombol status.
+  const [{ count: commissionCount }, { count: referredCount }] = await Promise.all([
+    admin.from("affiliate_commissions").select("id", { count: "exact", head: true }).eq("affiliate_id", id),
+    admin.from("profiles").select("id", { count: "exact", head: true }).eq("referred_by", id),
+  ]);
+
+  if ((commissionCount ?? 0) > 0 || (referredCount ?? 0) > 0) {
+    redirect(
+      "/dashboard/admin/affiliates?error=" +
+        encodeURIComponent("Tidak bisa dihapus — affiliate ini punya riwayat komisi atau pelanggan referral. Nonaktifkan saja.")
+    );
+  }
+
+  const { error } = await admin.from("affiliates").delete().eq("id", id);
+  if (error) {
+    redirect(`/dashboard/admin/affiliates?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/dashboard/admin/affiliates");
+  redirect("/dashboard/admin/affiliates?success=affiliate-dihapus");
+}
+
+export async function deleteLead(formData: FormData) {
+  await requireFounder();
+  const admin = createAdminClient();
+  const leadId = String(formData.get("lead_id") ?? "");
+  await admin.from("affiliate_leads").delete().eq("id", leadId);
+  revalidatePath("/dashboard/admin/affiliates");
+  redirect("/dashboard/admin/affiliates?success=lead-dihapus");
+}
