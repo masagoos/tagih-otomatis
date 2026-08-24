@@ -20,7 +20,9 @@ export default function LandingNav() {
   }, []);
 
   const panel = (
-    <div className={`${styles.navMobile} ${open ? styles.navMobileOpen : ""}`}>
+    <div
+      className={`${styles.page} ${styles.navMobile} ${open ? styles.navMobileOpen : ""}`}
+    >
       {LINKS.map((link) => (
         <a key={link.href} href={link.href} onClick={() => setOpen(false)}>
           {link.label}
