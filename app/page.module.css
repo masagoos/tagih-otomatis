@@ -1426,6 +1426,9 @@
   .pricingGrid {
     grid-template-columns: 1fr;
   }
+  .priceCard {
+    min-width: 0;
+  }
 }
 
 @media (max-width: 600px) {
@@ -1460,6 +1463,12 @@
   }
   .kpiValue {
     font-size: 14px;
+  }
+  .priceCard {
+    padding: 28px 24px;
+  }
+  .priceAmount .amt {
+    font-size: 32px;
   }
   .bento {
     grid-template-columns: 1fr;
