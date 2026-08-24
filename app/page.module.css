@@ -1462,6 +1462,16 @@
   .bSmall {
     grid-column: span 1;
   }
+  .bentoCard {
+    align-items: center;
+    text-align: center;
+  }
+  .bentoCard h3 {
+    font-size: 20.7px;
+  }
+  .bLarge h3 {
+    font-size: 25.3px;
+  }
   .showcaseCallouts {
     gap: 20px;
   }
