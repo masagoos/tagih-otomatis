@@ -1431,6 +1431,9 @@
   .section {
     padding: 64px 0;
   }
+  .baCard ul {
+    align-items: flex-start;
+  }
   .heroCta {
     flex-direction: column;
     align-items: stretch;
