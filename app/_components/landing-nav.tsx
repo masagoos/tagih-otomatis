@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import styles from "../page.module.css";
 
 const LINKS = [
@@ -12,6 +13,31 @@ const LINKS = [
 
 export default function LandingNav() {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const panel = (
+    <div className={`${styles.navMobile} ${open ? styles.navMobileOpen : ""}`}>
+      {LINKS.map((link) => (
+        <a key={link.href} href={link.href} onClick={() => setOpen(false)}>
+          {link.label}
+        </a>
+      ))}
+      <a href="/login" onClick={() => setOpen(false)}>
+        Masuk
+      </a>
+      <a
+        href="/login"
+        className={`${styles.btn} ${styles.btnPrimary}`}
+        onClick={() => setOpen(false)}
+      >
+        Coba Gratis
+      </a>
+    </div>
+  );
 
   return (
     <>
@@ -28,23 +54,7 @@ export default function LandingNav() {
           <line x1="4" y1="17" x2="20" y2="17" />
         </svg>
       </button>
-      <div className={`${styles.navMobile} ${open ? styles.navMobileOpen : ""}`}>
-        {LINKS.map((link) => (
-          <a key={link.href} href={link.href} onClick={() => setOpen(false)}>
-            {link.label}
-          </a>
-        ))}
-        <a href="/login" onClick={() => setOpen(false)}>
-          Masuk
-        </a>
-        <a
-          href="/login"
-          className={`${styles.btn} ${styles.btnPrimary}`}
-          onClick={() => setOpen(false)}
-        >
-          Coba Gratis
-        </a>
-      </div>
+      {mounted ? createPortal(panel, document.body) : panel}
     </>
   );
 }
