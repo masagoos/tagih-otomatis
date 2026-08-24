@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import styles from "../page.module.css";
 
 const LINKS = [
@@ -38,6 +39,21 @@ export default function LandingNav() {
       >
         Coba Gratis
       </a>
+
+      <div className={styles.navMobileFooter}>
+        <div className={styles.navMobileBrand}>
+          <span className={styles.logoMark}>
+            <Image src="/logo-masagoos.png" alt="Masagoos Studio" width={40} height={40} />
+          </span>
+          <span>TagihOtomatis</span>
+        </div>
+        <p>Penagihan lebih rapi. Pembayaran lebih cepat.</p>
+        <p>Telp/WA: 0813-999-4651</p>
+        <a href="https://www.tagihotomatis.id" onClick={() => setOpen(false)}>
+          www.tagihotomatis.id
+        </a>
+        <p className={styles.navMobileCredit}>Presented by Masagoos Studio &copy; 2026</p>
+      </div>
     </div>
   );
 
