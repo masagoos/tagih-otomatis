@@ -1454,6 +1454,13 @@
   .dashKpis .kpi:first-child {
     grid-column: span 2;
   }
+  .kpi {
+    min-width: 0;
+    padding: 12px;
+  }
+  .kpiValue {
+    font-size: 14px;
+  }
   .bento {
     grid-template-columns: 1fr;
   }
