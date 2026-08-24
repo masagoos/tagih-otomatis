@@ -269,7 +269,7 @@
   display: none;
   position: fixed;
   inset: 76px 0 0 0;
-  background: var(--neutral);
+  background: var(--mint);
   z-index: 99;
   padding: 24px;
   flex-direction: column;
@@ -280,7 +280,7 @@
 }
 .navMobile a {
   padding: 16px 4px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(16, 42, 42, 0.18);
   font-family: var(--font-head);
   font-weight: 600;
   font-size: 17px;
@@ -289,6 +289,12 @@
 .navMobile .btn {
   margin-top: 20px;
   width: 100%;
+  background: var(--navy);
+  color: var(--white);
+  border-bottom: none;
+}
+.navMobile .btn:hover {
+  background: var(--navy-ink);
 }
 
 /* ---------- HERO ---------- */
