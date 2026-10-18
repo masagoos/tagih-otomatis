@@ -49,8 +49,8 @@ export default async function BillingPage({
     profile?.plan === "trial" && profile.trial_ends_at && new Date(profile.trial_ends_at) < new Date();
 
   const tiers: { key: "starter" | "pro"; name: string; price: number }[] = [
-    { key: "starter", name: "Starter", price: 75000 },
-    { key: "pro", name: "Pro", price: 150000 },
+    { key: "starter", name: "Starter", price: 149000 },
+    { key: "pro", name: "Pro", price: 349000 },
   ];
 
   return (

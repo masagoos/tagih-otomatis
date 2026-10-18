@@ -8,21 +8,21 @@ import styles from "../page.module.css";
 export const metadata = {
   title: "Program Affiliate — Tagih Otomatis",
   description:
-    "Ajak pelaku UMKM pakai Tagih Otomatis, dapat komisi berulang setiap bulan selama pelanggan tetap aktif. Komisi mulai 30%, naik otomatis sampai 40%.",
+    "Ajak pelaku UMKM pakai Tagih Otomatis, dapat komisi berulang setiap bulan selama pelanggan tetap aktif. Komisi mulai 20%, naik otomatis sampai 30%.",
 };
 
 const TIERS = [
   {
     name: "Affiliate",
     requirement: "Langsung aktif setelah didaftarkan",
-    commission: 30,
+    commission: 20,
     perks: ["Komisi berulang setiap bulan", "Link referral pribadi", "Naik tingkat otomatis"],
     highlight: false,
   },
   {
     name: "Affiliate Perak",
     requirement: "Minimal 5 pelanggan aktif hasil referral",
-    commission: 35,
+    commission: 25,
     perks: [
       "Semua benefit tingkat Affiliate",
       "Akses lebih awal ke fitur baru",
@@ -33,7 +33,7 @@ const TIERS = [
   {
     name: "Affiliate Emas",
     requirement: "Minimal 15 pelanggan aktif hasil referral",
-    commission: 40,
+    commission: 30,
     perks: [
       "Semua benefit tingkat Perak",
       "Bonus Rp500.000 tiap tambahan 10 pelanggan aktif baru/bulan",
@@ -44,8 +44,8 @@ const TIERS = [
 ];
 
 const EXAMPLES = [
-  { plan: "Starter", price: 75000 },
-  { plan: "Pro", price: 150000 },
+  { plan: "Starter", price: 149000 },
+  { plan: "Pro", price: 349000 },
 ];
 
 const FAQ_ITEMS = [
@@ -224,9 +224,9 @@ export default async function AffiliatePage({
               <thead>
                 <tr>
                   <th>Paket Pelanggan</th>
-                  <th>Affiliate (30%)</th>
-                  <th>Perak (35%)</th>
-                  <th>Emas (40%)</th>
+                  <th>Affiliate (20%)</th>
+                  <th>Perak (25%)</th>
+                  <th>Emas (30%)</th>
                 </tr>
               </thead>
               <tbody>
@@ -235,9 +235,9 @@ export default async function AffiliatePage({
                     <td>
                       {ex.plan} — {formatRupiah(ex.price)}/bulan
                     </td>
+                    <td>{formatRupiah(Math.round(ex.price * 0.2))}/bulan</td>
+                    <td>{formatRupiah(Math.round(ex.price * 0.25))}/bulan</td>
                     <td>{formatRupiah(Math.round(ex.price * 0.3))}/bulan</td>
-                    <td>{formatRupiah(Math.round(ex.price * 0.35))}/bulan</td>
-                    <td>{formatRupiah(Math.round(ex.price * 0.4))}/bulan</td>
                   </tr>
                 ))}
               </tbody>

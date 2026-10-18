@@ -5,8 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createPaymentLink } from "@/lib/mayar";
 
 const PLAN_PRICE: Record<"starter" | "pro", number> = {
-  starter: 75000,
-  pro: 150000,
+  starter: 149000,
+  pro: 349000,
 };
 
 export async function upgradePlan(formData: FormData) {
@@ -26,11 +26,14 @@ export async function upgradePlan(formData: FormData) {
 
   // Kalau sudah ada link "menunggu pembayaran" untuk paket yang sama, pakai ulang
   // — hindari bikin banyak link Mayar tiap kali user klik ulang tombol upgrade.
+  // Hanya pakai ulang link dengan nominal yang sama dengan harga paket saat ini,
+  // supaya link lama (sebelum perubahan harga) tidak ikut terpakai.
   const { data: existing } = await supabase
     .from("payments")
     .select("mayar_checkout_url")
     .eq("user_id", user.id)
     .eq("plan", plan)
+    .eq("amount", amount)
     .eq("status", "pending")
     .order("created_at", { ascending: false })
     .limit(1)
