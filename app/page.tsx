@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatRupiah } from "@/lib/phone";
+import { PLAN_INVOICE_LIMIT } from "@/lib/plans";
 import LandingNav from "./_components/landing-nav";
 import LandingFaq from "./_components/landing-faq";
 import styles from "./page.module.css";
@@ -16,8 +17,8 @@ const TIER_META: Record<
   string,
   { name: string; price: number; maxInvoices: number; highlight?: boolean }
 > = {
-  starter: { name: "Starter", price: 149000, maxInvoices: 50 },
-  pro: { name: "Pro", price: 349000, maxInvoices: 150, highlight: true },
+  starter: { name: "Starter", price: 149000, maxInvoices: PLAN_INVOICE_LIMIT.starter },
+  pro: { name: "Pro", price: 349000, maxInvoices: PLAN_INVOICE_LIMIT.pro, highlight: true },
 };
 
 function CheckIcon() {
@@ -689,7 +690,7 @@ export default async function LandingPage() {
                     </li>
                     <li>
                       <CheckIcon />
-                      Pengingat H-3, H-0, H-3 &amp; konfirmasi bayar
+                      Pengingat H-3, H0, H+3 &amp; konfirmasi bayar
                     </li>
                   </ul>
                   <Link

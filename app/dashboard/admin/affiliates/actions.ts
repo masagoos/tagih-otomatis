@@ -6,9 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const TIER_RATE: Record<string, number> = {
-  affiliate: 0.3,
-  perak: 0.35,
-  emas: 0.4,
+  affiliate: 0.2,
+  perak: 0.25,
+  emas: 0.3,
 };
 
 async function requireFounder() {

@@ -6,9 +6,9 @@ import { formatRupiah } from "@/lib/phone";
 import { createAffiliateFromLead, rejectLead, deleteLead, markCommissionPaid, toggleAffiliateStatus } from "./actions";
 
 const TIER_LABEL: Record<string, string> = {
-  affiliate: "Affiliate (30%)",
-  perak: "Affiliate Perak (35%)",
-  emas: "Affiliate Emas (40%)",
+  affiliate: "Affiliate (20%)",
+  perak: "Affiliate Perak (25%)",
+  emas: "Affiliate Emas (30%)",
 };
 
 export default async function AdminAffiliatesPage({
@@ -129,9 +129,9 @@ export default async function AdminAffiliatesPage({
                   <form action={createAffiliateFromLead} className="flex items-center gap-2">
                     <input type="hidden" name="lead_id" value={lead.id} />
                     <select name="tier" className="rounded-lg border px-2 py-1.5 text-sm" defaultValue="affiliate">
-                      <option value="affiliate">Affiliate (30%)</option>
-                      <option value="perak">Perak (35%)</option>
-                      <option value="emas">Emas (40%)</option>
+                      <option value="affiliate">Affiliate (20%)</option>
+                      <option value="perak">Perak (25%)</option>
+                      <option value="emas">Emas (30%)</option>
                     </select>
                     <button className="rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-700">
                       Jadikan Affiliate
