@@ -84,9 +84,9 @@ export default async function EditAffiliatePage({
               defaultValue={affiliate.tier}
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
             >
-              <option value="affiliate">Affiliate (30%)</option>
-              <option value="perak">Perak (35%)</option>
-              <option value="emas">Emas (40%)</option>
+              <option value="affiliate">Affiliate (20%)</option>
+              <option value="perak">Perak (25%)</option>
+              <option value="emas">Emas (30%)</option>
             </select>
           </label>
 

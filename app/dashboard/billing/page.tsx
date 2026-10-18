@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatRupiah } from "@/lib/phone";
+import { PLAN_INVOICE_LIMIT } from "@/lib/plans";
 import { upgradePlan } from "./actions";
 
 const PLAN_LABEL: Record<string, string> = { trial: "Uji Coba", starter: "Starter", pro: "Pro" };
@@ -122,7 +123,8 @@ export default async function BillingPage({
               <ul className="mt-4 space-y-1 text-sm text-gray-600">
                 <li>✓ {limit?.monthly_messages ?? "?"} pesan pengingat/bulan</li>
                 <li>✓ {limit?.max_devices ?? 1} nomor WA</li>
-                <li>✓ Tagihan &amp; pelanggan tanpa batas</li>
+                <li>✓ Maksimal {PLAN_INVOICE_LIMIT[tier.key]} tagihan baru per bulan</li>
+                <li>✓ Pelanggan tanpa batas</li>
               </ul>
               <form action={upgradePlan} className="mt-5">
                 <input type="hidden" name="plan" value={tier.key} />

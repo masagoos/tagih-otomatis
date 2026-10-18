@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { normalizePhone } from "@/lib/phone";
+import { invoiceQuotaError } from "@/lib/plans";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -16,6 +17,11 @@ async function requireUser() {
 
 type Supa = Awaited<ReturnType<typeof createClient>>;
 
+async function getPlan(supabase: Supa, userId: string): Promise<string | null> {
+  const { data } = await supabase.from("profiles").select("plan").eq("id", userId).maybeSingle();
+  return data?.plan ?? null;
+}
+
 // Nomor invoice: INV-YYYYMM-0001, berurut per user per bulan.
 // Loop kecil menangani tabrakan unique constraint (insert bersamaan).
 async function insertInvoice(
@@ -23,6 +29,9 @@ async function insertInvoice(
   userId: string,
   data: { contact_id: string; amount: number; due_date: string; description: string | null }
 ): Promise<string | null> {
+  const quotaErr = await invoiceQuotaError(supabase, userId, await getPlan(supabase, userId));
+  if (quotaErr) return quotaErr;
+
   const prefix = `INV-${new Date().toISOString().slice(0, 7).replace("-", "")}-`;
   const { count } = await supabase
     .from("invoices")
@@ -96,6 +105,9 @@ export async function createInvoice(formData: FormData) {
 
   if (!amount || amount <= 0) redirect("/dashboard/invoices/new?error=Nominal+tidak+valid");
   if (!dueDate) redirect("/dashboard/invoices/new?error=Tanggal+jatuh+tempo+wajib+diisi");
+
+  const quotaErr = await invoiceQuotaError(supabase, user.id, await getPlan(supabase, user.id));
+  if (quotaErr) redirect(`/dashboard/invoices/new?error=${encodeURIComponent(quotaErr)}`);
 
   let contactId: string;
   if (contactChoice === "new") {
@@ -192,6 +204,7 @@ export async function importInvoices(
   const { supabase, user } = await requireUser();
   const errors: string[] = [];
   let imported = 0;
+  const plan = await getPlan(supabase, user.id);
 
   for (const [i, row] of rows.slice(0, 200).entries()) {
     const label = `Baris ${i + 1} (${row.name || "?"})`;
@@ -207,6 +220,12 @@ export async function importInvoices(
     if (!/^\d{4}-\d{2}-\d{2}$/.test(row.due_date ?? "")) {
       errors.push(`${label}: tanggal harus format YYYY-MM-DD atau DD/MM/YYYY`);
       continue;
+    }
+
+    const quotaErr = await invoiceQuotaError(supabase, user.id, plan);
+    if (quotaErr) {
+      errors.push(`Import dihentikan di baris ${i + 1}: ${quotaErr}`);
+      break;
     }
 
     const contact = await findOrCreateContact(supabase, user.id, row.name.trim(), row.phone);
