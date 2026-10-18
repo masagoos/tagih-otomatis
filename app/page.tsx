@@ -12,9 +12,12 @@ export const metadata = {
     "Catat tagihan sekali, sistem otomatis kirim pengingat ke WhatsApp pelanggan Anda. Berhenti nagih manual — mulai gratis 14 hari.",
 };
 
-const TIER_META: Record<string, { name: string; price: number; highlight?: boolean }> = {
-  starter: { name: "Starter", price: 75000 },
-  pro: { name: "Pro", price: 150000, highlight: true },
+const TIER_META: Record<
+  string,
+  { name: string; price: number; maxInvoices: number; highlight?: boolean }
+> = {
+  starter: { name: "Starter", price: 149000, maxInvoices: 50 },
+  pro: { name: "Pro", price: 349000, maxInvoices: 150, highlight: true },
 };
 
 function CheckIcon() {
@@ -149,7 +152,7 @@ export default async function LandingPage() {
     },
     {
       q: "Apa perbedaan paket Starter dan Pro?",
-      a: `Starter mencakup ${starterLimit?.monthly_messages ?? "sejumlah"} pesan pengingat/bulan dengan ${starterLimit?.max_devices ?? 1} nomor WhatsApp. Pro mencakup ${proLimit?.monthly_messages ?? "lebih banyak"} pesan pengingat/bulan dengan ${proLimit?.max_devices ?? 1} nomor WhatsApp — cocok untuk volume tagihan yang lebih besar. Tagihan dan pelanggan tidak dibatasi di kedua paket.`,
+      a: `Starter mencakup ${starterLimit?.monthly_messages ?? "sejumlah"} pesan pengingat/bulan dengan ${starterLimit?.max_devices ?? 1} nomor WhatsApp. Pro mencakup ${proLimit?.monthly_messages ?? "lebih banyak"} pesan pengingat/bulan dengan ${proLimit?.max_devices ?? 1} nomor WhatsApp — cocok untuk volume tagihan yang lebih besar. Jumlah maksimal tagihan ${TIER_META.starter.maxInvoices} untuk Starter dan ${TIER_META.pro.maxInvoices} untuk Pro; pelanggan tidak dibatasi di kedua paket.`,
     },
   ];
 
@@ -678,7 +681,15 @@ export default async function LandingPage() {
                     </li>
                     <li>
                       <CheckIcon />
-                      Tagihan &amp; pelanggan tanpa batas
+                      Jumlah Maksimal Tagihan {tier.maxInvoices}
+                    </li>
+                    <li>
+                      <CheckIcon />
+                      Pelanggan tanpa batas
+                    </li>
+                    <li>
+                      <CheckIcon />
+                      Pengingat H-3, H-0, H-3 &amp; konfirmasi bayar
                     </li>
                   </ul>
                   <Link
