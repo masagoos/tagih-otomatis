@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 type Mode = "magic" | "password";
+
+const LINK_ERROR_MESSAGE =
+  "Link login sebelumnya sudah kedaluwarsa atau sudah pernah dipakai. Silakan minta link baru di bawah ini.";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +17,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error") === "link-invalid") {
+      setErrorMsg(LINK_ERROR_MESSAGE);
+      setStatus("error");
+      window.history.replaceState(null, "", "/login");
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

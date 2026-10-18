@@ -3,20 +3,21 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatRupiah } from "@/lib/phone";
-import { createAffiliateFromLead, rejectLead, deleteLead, markCommissionPaid, toggleAffiliateStatus } from "./actions";
+import { createAffiliateFromLead, rejectLead, deleteLead, markCommissionPaid, toggleAffiliateStatus, sendAffiliateLinkWA } from "./actions";
+import AffiliateSearch from "./affiliate-search";
 
 const TIER_LABEL: Record<string, string> = {
-  affiliate: "Affiliate (30%)",
-  perak: "Affiliate Perak (35%)",
-  emas: "Affiliate Emas (40%)",
+  affiliate: "Affiliate (20%)",
+  perak: "Affiliate Perak (25%)",
+  emas: "Affiliate Emas (30%)",
 };
 
 export default async function AdminAffiliatesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; success?: string; code?: string }>;
+  searchParams: Promise<{ error?: string; success?: string; code?: string; q?: string }>;
 }) {
-  const { error, success, code } = await searchParams;
+  const { error, success, code, q } = await searchParams;
 
   const supabase = await createClient();
   const {
@@ -35,7 +36,7 @@ export default async function AdminAffiliatesPage({
       .order("created_at", { ascending: false }),
     admin
       .from("affiliates")
-      .select("id, code, name, email, tier, commission_rate, status, created_at")
+      .select("id, code, name, email, phone, tier, commission_rate, status, created_at")
       .order("created_at", { ascending: false }),
     admin
       .from("affiliate_commissions")
@@ -47,14 +48,18 @@ export default async function AdminAffiliatesPage({
   const affiliateList = affiliates ?? [];
   const commissionList = commissions ?? [];
   const referredCounts = new Map<string, number>();
+  const paidByAffiliate = new Map<string, number>();
   if (affiliateList.length > 0) {
-    const { data: profileCounts } = await admin
-      .from("profiles")
-      .select("referred_by")
-      .not("referred_by", "is", null);
+    const [{ data: profileCounts }, { data: paidCommissions }] = await Promise.all([
+      admin.from("profiles").select("referred_by").not("referred_by", "is", null),
+      admin.from("affiliate_commissions").select("affiliate_id, amount").eq("status", "paid"),
+    ]);
     for (const p of profileCounts ?? []) {
       const key = p.referred_by as string;
       referredCounts.set(key, (referredCounts.get(key) ?? 0) + 1);
+    }
+    for (const c of paidCommissions ?? []) {
+      paidByAffiliate.set(c.affiliate_id, (paidByAffiliate.get(c.affiliate_id) ?? 0) + Number(c.amount));
     }
   }
 
@@ -66,20 +71,70 @@ export default async function AdminAffiliatesPage({
     .reduce((sum, c) => sum + Number(c.amount), 0);
   const activeAffiliateCount = affiliateList.filter((a) => a.status === "active").length;
 
+  const query = (q ?? "").trim().toLowerCase();
+  const filteredAffiliates = query
+    ? affiliateList.filter((a) =>
+        [a.name, a.email, a.code].some((field) => field?.toLowerCase().includes(query))
+      )
+    : affiliateList;
+
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900">Kelola Affiliate</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        Ubah pendaftar menjadi affiliate resmi, dan pantau komisi yang harus dibayar.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Kelola Affiliate</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Ubah pendaftar menjadi affiliate resmi, dan pantau komisi yang harus dibayar.
+          </p>
+        </div>
+        <AffiliateSearch />
+      </div>
 
       {error && (
         <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
-      {success === "affiliate-dibuat" && (
+      {success === "affiliate-dibuat" && (() => {
+        const newAffiliate = affiliateList.find((a) => a.code === code);
+        const referralLink = `${process.env.NEXT_PUBLIC_APP_URL}/?ref=${code}`;
+        const shareText = newAffiliate
+          ? `Halo ${newAffiliate.name}! Anda resmi jadi Affiliate Tagih Otomatis.\n\nKode referral Anda: ${code}\nLink referral pribadi Anda:\n${referralLink}\n\nBagikan link ini ke jaringan Anda — setiap pelanggan yang berlangganan lewatnya, komisinya otomatis tercatat untuk Anda.`
+          : "";
+        const mailtoHref = newAffiliate?.email
+          ? `mailto:${encodeURIComponent(newAffiliate.email)}?subject=${encodeURIComponent("Link Referral Affiliate Tagih Otomatis")}&body=${encodeURIComponent(shareText)}`
+          : undefined;
+        return (
+          <div className="mt-4 rounded-lg bg-green-50 p-4 text-sm text-green-700">
+            <p>
+              ✓ Affiliate berhasil dibuat.
+              <br />
+              Kode referral: <strong>{code}</strong> — link: <span className="font-mono">{referralLink}</span>
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              {newAffiliate?.phone ? (
+                <form action={sendAffiliateLinkWA}>
+                  <input type="hidden" name="affiliate_id" value={newAffiliate.id} />
+                  <button className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+                    📱 Kirim Link via WA
+                  </button>
+                </form>
+              ) : (
+                <span className="text-xs text-green-600/70">Tidak ada nomor WA tercatat untuk kirim otomatis.</span>
+              )}
+              {mailtoHref && (
+                <a
+                  href={mailtoHref}
+                  className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                >
+                  📧 Kirim Link via Email
+                </a>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+      {success === "wa-terkirim" && (
         <div className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
-          Affiliate berhasil dibuat. Kode referral: <strong>{code}</strong> — link:{" "}
-          <span className="font-mono">{process.env.NEXT_PUBLIC_APP_URL}/?ref={code}</span>
+          Link referral berhasil dikirim via WhatsApp.
         </div>
       )}
       {success === "affiliate-diperbarui" && (
@@ -129,9 +184,9 @@ export default async function AdminAffiliatesPage({
                   <form action={createAffiliateFromLead} className="flex items-center gap-2">
                     <input type="hidden" name="lead_id" value={lead.id} />
                     <select name="tier" className="rounded-lg border px-2 py-1.5 text-sm" defaultValue="affiliate">
-                      <option value="affiliate">Affiliate (30%)</option>
-                      <option value="perak">Perak (35%)</option>
-                      <option value="emas">Emas (40%)</option>
+                      <option value="affiliate">Affiliate (20%)</option>
+                      <option value="perak">Perak (25%)</option>
+                      <option value="emas">Emas (30%)</option>
                     </select>
                     <button className="rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-700">
                       Jadikan Affiliate
@@ -158,8 +213,11 @@ export default async function AdminAffiliatesPage({
 
       <div className="mt-8 rounded-xl bg-white p-6 shadow-sm">
         <h2 className="font-semibold text-gray-900">Daftar Affiliate</h2>
+        <p className="mt-1 text-xs text-gray-400">Komisi dibayarkan 2x sebulan, tanggal 15 dan 30.</p>
         {affiliateList.length === 0 ? (
           <p className="mt-4 text-sm text-gray-400">Belum ada affiliate resmi.</p>
+        ) : filteredAffiliates.length === 0 ? (
+          <p className="mt-4 text-sm text-gray-400">Tidak ada affiliate yang cocok dengan pencarian &quot;{q}&quot;.</p>
         ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-sm">
@@ -170,14 +228,20 @@ export default async function AdminAffiliatesPage({
                   <th className="py-2 pr-4">Tingkatan</th>
                   <th className="py-2 pr-4">Referral</th>
                   <th className="py-2 pr-4">Status</th>
+                  <th className="py-2 pr-4">Total Komisi Dibayar</th>
                   <th className="py-2 pr-4"></th>
                 </tr>
               </thead>
               <tbody>
-                {affiliateList.map((a) => (
+                {filteredAffiliates.map((a) => (
                   <tr key={a.id} className="border-b last:border-0">
                     <td className="py-2 pr-4">
-                      <p className="font-medium text-gray-900">{a.name}</p>
+                      <Link
+                        href={`/dashboard/admin/affiliates/${a.id}`}
+                        className="font-medium text-gray-900 hover:text-violet-700 hover:underline"
+                      >
+                        {a.name}
+                      </Link>
                       <p className="text-xs text-gray-400">{a.email}</p>
                     </td>
                     <td className="py-2 pr-4 font-mono text-xs text-gray-500">?ref={a.code}</td>
@@ -191,6 +255,9 @@ export default async function AdminAffiliatesPage({
                       >
                         {a.status === "active" ? "Aktif" : "Nonaktif"}
                       </span>
+                    </td>
+                    <td className="py-2 pr-4 font-medium text-gray-900">
+                      {formatRupiah(paidByAffiliate.get(a.id) ?? 0)}
                     </td>
                     <td className="py-2 pr-4">
                       <div className="flex items-center gap-2 whitespace-nowrap">

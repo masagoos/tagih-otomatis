@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { signOut } from "./actions";
 import OnboardingForm from "./onboarding-form";
 
@@ -21,11 +22,32 @@ export default async function DashboardLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from("profiles")
     .select("business_name, plan, trial_ends_at, sub_status")
     .eq("id", user.id)
     .maybeSingle();
+
+  // Founder tidak boleh terjebak di form onboarding pelanggan setiap kali sesi
+  // baru — buatkan profil dasarnya sekali secara otomatis, biar langsung masuk
+  // ke dashboard (termasuk menu Kelola Pelanggan/Affiliate). Detail bisa diedit
+  // sendiri lewat "Kelola Pelanggan" > cari baris ini > Ubah.
+  if (!profile && user.email === process.env.FOUNDER_EMAIL) {
+    const admin = createAdminClient();
+    const { data: created } = await admin
+      .from("profiles")
+      .insert({
+        id: user.id,
+        business_name: "Masagoos Studio",
+        owner_name: "Agus Sofyan",
+        phone: "628000000000",
+        plan: "pro",
+        sub_status: "active",
+      })
+      .select("business_name, plan, trial_ends_at, sub_status")
+      .single();
+    profile = created;
+  }
 
   if (!profile) return <OnboardingForm />;
 

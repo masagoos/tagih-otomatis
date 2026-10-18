@@ -49,7 +49,10 @@ export async function sendWhatsApp(
 }
 
 // Jeda acak antar pesan — mitigasi utama risiko nomor WA kena banned oleh WhatsApp.
-export function randomDelayMs(minSec = 3, maxSec = 8): number {
+// 8-15 detik dipilih karena Fonnte adalah otomatisasi TIDAK RESMI (meniru WhatsApp
+// Web/multi-device, bukan WhatsApp Business Cloud API resmi Meta) — pola kirim yang
+// terlalu rapat adalah sinyal spam terbesar untuk nomor konsumen/bisnis biasa.
+export function randomDelayMs(minSec = 8, maxSec = 15): number {
   return (minSec + Math.random() * (maxSec - minSec)) * 1000;
 }
 

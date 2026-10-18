@@ -4,11 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendWhatsApp } from "@/lib/fonnte";
 
 const TIER_RATE: Record<string, number> = {
-  affiliate: 0.3,
-  perak: 0.35,
-  emas: 0.4,
+  affiliate: 0.2,
+  perak: 0.25,
+  emas: 0.3,
 };
 
 async function requireFounder() {
@@ -160,6 +161,64 @@ export async function deleteAffiliate(formData: FormData) {
 
   revalidatePath("/dashboard/admin/affiliates");
   redirect("/dashboard/admin/affiliates?success=affiliate-dihapus");
+}
+
+export async function sendAffiliateLinkWA(formData: FormData) {
+  await requireFounder();
+  const admin = createAdminClient();
+  const affiliateId = String(formData.get("affiliate_id") ?? "");
+  const returnTo = String(formData.get("redirect_to") ?? "/dashboard/admin/affiliates");
+
+  const { data: affiliate } = await admin
+    .from("affiliates")
+    .select("name, code, phone, tier")
+    .eq("id", affiliateId)
+    .maybeSingle();
+
+  if (!affiliate?.phone) {
+    redirect(`${returnTo}?error=` + encodeURIComponent("Affiliate ini tidak punya nomor WA tercatat."));
+  }
+
+  // Kirim dari device WA Founder yang sedang tersambung — sama seperti notifikasi
+  // pendaftar baru. .limit(1) supaya tidak gagal diam-diam kalau nomor Founder
+  // kebetulan tersambung sebagai lebih dari satu baris wa_devices.
+  const founderNumber = process.env.FOUNDER_WA_NUMBER;
+  if (!founderNumber) {
+    redirect(`${returnTo}?error=` + encodeURIComponent("FOUNDER_WA_NUMBER belum diset."));
+  }
+  const { data: devices } = await admin
+    .from("wa_devices")
+    .select("api_token")
+    .eq("phone_number", founderNumber)
+    .eq("status", "connected")
+    .limit(1);
+  const device = devices?.[0];
+  if (!device?.api_token) {
+    redirect(`${returnTo}?error=` + encodeURIComponent("Perangkat WA Founder tidak tersambung — cek menu Perangkat WA."));
+  }
+
+  const rate = TIER_RATE[affiliate.tier] ?? TIER_RATE.affiliate;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://tagihotomatis.id";
+  const message = [
+    `Halo ${affiliate.name}! 🎉`,
+    "",
+    "Anda resmi jadi Affiliate Tagih Otomatis.",
+    "",
+    `Kode referral Anda: ${affiliate.code}`,
+    `Komisi: ${Math.round(rate * 100)}% berulang setiap bulan`,
+    "",
+    "Link referral pribadi Anda (bagikan ke jaringan Anda):",
+    `${appUrl}/?ref=${affiliate.code}`,
+    "",
+    "Setiap pelanggan yang berlangganan lewat link ini, komisinya otomatis tercatat untuk Anda selama mereka tetap aktif. Terima kasih sudah jadi partner kami!",
+  ].join("\n");
+
+  const result = await sendWhatsApp(device.api_token, affiliate.phone, message);
+  if (!result.ok) {
+    redirect(`${returnTo}?error=${encodeURIComponent("Gagal kirim WA: " + result.error)}`);
+  }
+
+  redirect(`${returnTo}?success=wa-terkirim`);
 }
 
 export async function deleteLead(formData: FormData) {

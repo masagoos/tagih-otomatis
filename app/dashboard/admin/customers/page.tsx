@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import CustomerSearch from "./customer-search";
 
 const PLAN_LABEL: Record<string, string> = {
   trial: "Uji Coba",
@@ -25,9 +26,9 @@ const WA_STATUS_BADGE: Record<string, { label: string; cls: string }> = {
 export default async function AdminCustomersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; success?: string }>;
+  searchParams: Promise<{ error?: string; success?: string; q?: string }>;
 }) {
-  const { error, success } = await searchParams;
+  const { error, success, q } = await searchParams;
 
   const supabase = await createClient();
   const {
@@ -67,12 +68,24 @@ export default async function AdminCustomersPage({
   const onTrial = customerList.filter((c) => c.plan === "trial").length;
   const needsAttentionCount = customerList.filter((c) => c.needsAttention).length;
 
+  const query = (q ?? "").trim().toLowerCase();
+  const filteredList = query
+    ? customerList.filter((c) =>
+        [c.business_name, c.owner_name, c.phone].some((field) => field?.toLowerCase().includes(query))
+      )
+    : customerList;
+
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900">Kelola Pelanggan</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        Status langganan dan koneksi WhatsApp semua pelanggan.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Kelola Pelanggan</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Status langganan dan koneksi WhatsApp semua pelanggan.
+          </p>
+        </div>
+        <CustomerSearch />
+      </div>
 
       {error && (
         <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
@@ -109,6 +122,8 @@ export default async function AdminCustomersPage({
         <h2 className="font-semibold text-gray-900">Semua Pelanggan</h2>
         {customerList.length === 0 ? (
           <p className="mt-4 text-sm text-gray-400">Belum ada pelanggan terdaftar.</p>
+        ) : filteredList.length === 0 ? (
+          <p className="mt-4 text-sm text-gray-400">Tidak ada pelanggan yang cocok dengan pencarian &quot;{q}&quot;.</p>
         ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-sm">
@@ -124,7 +139,7 @@ export default async function AdminCustomersPage({
                 </tr>
               </thead>
               <tbody>
-                {customerList.map((c) => {
+                {filteredList.map((c) => {
                   const subBadge = SUB_STATUS_BADGE[c.sub_status] ?? SUB_STATUS_BADGE.active;
                   const customerDevices = devicesByUser.get(c.id) ?? [];
                   const dateLabel =
